@@ -1,0 +1,11 @@
+--- src/__java__.cc_orig	2008-04-11 02:22:02.000000000 -0400
++++ src/__java__.cc	2008-04-11 02:22:19.000000000 -0400
+@@ -294,7 +294,7 @@
+ 
+ #else
+ 
+-  std::string jvm_lib_path = JAVA_HOME+std::string("/jre/lib/")+JAVA_ARCH+"/client/libjvm.so";
++  std::string jvm_lib_path = JAVA_HOME+std::string("/jre/lib/")+JAVA_ARCH+"/server/libjvm.so";
+ 
+ #endif
+ 
