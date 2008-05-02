@@ -1,0 +1,8 @@
+--- src/Makefile.orig	2008-04-11 00:13:00.000000000 -0400
++++ src/Makefile	2008-04-11 00:19:40.000000000 -0400
+@@ -38,4 +38,4 @@
+ 	$(MKOCTFILE) -v -I. $(JAVA_INCS) -c $<
+ 
+ __jhandles__.oct: __jhandles__.cc
+-	$(MKOCTFILE) '-I$(OCTAVE_JAVA_DIR)' $^ '-L$(OCTAVE_JAVAOCT_DIR)' -l__java__
++	$(MKOCTFILE) '-I$(OCTAVE_JAVA_DIR)' $^ '-L$(OCTAVE_JAVAOCT_DIR)' $(JAVA_INCS)
