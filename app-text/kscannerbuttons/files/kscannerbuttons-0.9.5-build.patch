@@ -1,0 +1,184 @@
+--- Makefile
++++ Makefile
+@@ -1,13 +1,18 @@
+ # KScannerButtons makefile
+ #
+ 
+-PREFIX = /usr/local/
+-ICONPATH = /usr/share/icons/
+-LOCALEPATH = /usr/share/locale/
+-
+-GCC = gcc
+-GPP = g++
+-SANECONFIG = `sane-config --libs -cflags`
++VPATH = src
++
++PREFIX = /usr/local
++BINDIR = $(PREFIX)/bin
++DATADIR = $(PREFIX)/share/kscannerbuttons
++MENUDIR = $(PREFIX)/share/applications
++ICONPATH = $(PREFIX)/share/icons
++LOCALEPATH = $(PREFIX)/share/locale
++
++LDFLAGS += $(shell sane-config --ldflags)
++LDLIBS += $(shell sane-config --libs)
++CPPFLAGS += $(shell sane-config --cflags)
+ 
+ RM = rm -f
+ INSTALL = install --group=0 --owner=0 --mode=0755
+@@ -16,38 +21,37 @@
+ CP = cp -f
+ MKDIR = mkdir
+ 
+-INSTALLCMD = $(INSTALL) sanebuttonsd $(PREFIX)bin/sanebuttonsd ; \
+-	$(INSTALL) sane-list-scanners $(PREFIX)bin/sane-list-scanners ; \
+-	$(INSTALL) sane-nb-buttons $(PREFIX)bin/sane-nb-buttons ; \
+-	$(INSTALL) sanebuttonsd-test.sh $(PREFIX)bin/sanebuttonsd-test.sh ; \
+-	if [ ! -d $(PREFIX)share/kscannerbuttons/ ] ; then $(MKDIR) $(PREFIX)share/kscannerbuttons/ ; fi ; \
+-	$(INSTALL) sanebuttonsd.sh $(PREFIX)share/kscannerbuttons/sanebuttonsd.sh ; \
+-	$(INSTALL) kscannerbuttons.sh $(PREFIX)bin/kscannerbuttons ; \
+-	$(INSTALL2) KScannerButtons.kmdr $(PREFIX)share/kscannerbuttons/KScannerButtons.kmdr ; \
+-	$(INSTALL2) KScannerButtons.desktop /usr/share/applnk/Graphics/KScannerButtons.desktop ; \
+-	$(INSTALL2) src/button_ok.png $(ICONPATH)KScannerButtons_ok.png ; \
+-	$(INSTALL2) src/button_cancel.png $(ICONPATH)KScannerButtons_ko.png
+-
+ all: sanebuttonsd sane-list-scanners sane-nb-buttons
+ 
+ sanebuttonsd: src/sanebuttonsd.cc
+-	$(GPP) $(SANECONFIG) src/sanebuttonsd.cc -o sanebuttonsd
+ 
+ sane-list-scanners: src/sane-list-scanners.c
+-	$(GCC) $(SANECONFIG) src/sane-list-scanners.c -o sane-list-scanners
+ 
+ sane-nb-buttons: src/sane-nb-buttons.c
+-	$(GCC) $(SANECONFIG) src/sane-nb-buttons.c -o sane-nb-buttons
+ 
+ clean:
+-	$(RM) sanebuttonsd && rm sane-list-scanners && rm sane-nb-buttons
++	$(RM) sanebuttonsd sane-list-scanners sane-nb-buttons
+ 
+ # replace hard coded paths in the .kmdr file with the defined PREFIX
+ prefix:
+ 	perl -i.bak -pe 's@/usr/local/@$(PREFIX)@' KScannerButtons.kmdr
+ 
+ install: all prefix install_locales sanebuttonsd-test.sh sanebuttonsd.sh KScannerButtons.kmdr KScannerButtons.desktop kscannerbuttons.sh src/button_ok.png src/button_cancel.png
+-	$(INSTALLCMD)
++	$(INSTALL) -d $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR) $(DESTDIR)$(MENUDIR) \
++		$(DESTDIR)$(ICONPATH) $(DESTDIR)$(LOCALEPATH)
++
++	$(INSTALL) sanebuttonsd $(DESTDIR)$(BINDIR)
++	$(INSTALL) sane-list-scanners $(DESTDIR)$(BINDIR)
++	$(INSTALL) sane-nb-buttons $(DESTDIR)$(BINDIR)
++	$(INSTALL) kscannerbuttons.sh $(DESTDIR)$(BINDIR)/kscannerbuttons
++
++	$(INSTALL) sanebuttonsd-test.sh $(DESTDIR)$(DATADIR)
++	$(INSTALL) sanebuttonsd.sh $(DESTDIR)$(DATADIR)
++	$(INSTALL2) KScannerButtons.kmdr $(DESTDIR)$(DATADIR)
++
++	$(INSTALL2) KScannerButtons.desktop $(DESTDIR)$(MENUDIR)
++	$(INSTALL2) src/button_ok.png $(DESTDIR)$(ICONPATH)/KScannerButtons_ok.png
++	$(INSTALL2) src/button_cancel.png $(DESTDIR)$(ICONPATH)/KScannerButtons_ko.png
+ 
+ # to create an icon on the Desktop
+ userinstall: KScannerButtons.desktop
+@@ -81,16 +85,9 @@
+ 
+ locales:
+ 	# compile the i18n .po into a .mo file
+-	for i in locale/* ; do \
+-		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
+-			make -C $$i ; \
+-		fi ; \
+-	done
++	$(MAKE) -C locale
+ 
+ install_locales: locales
+-	for i in locale/* ; do \
+-		if [ -d $$i ] && [ $$i != "." ] && [ $$i != ".." ]; then \
+-			make -C $$i install ; \
+-		fi ; \
+-	done
++	$(MAKE) -C locale install
+ 
++.PHONY: all clean install install_locales locales i18n kdeinstall userinstall prefix
+--- locale/cs/Makefile
++++ locale/cs/Makefile
+@@ -1,7 +1 @@
+-all: KScannerButtons.kmdr.po
+-	msgfmt KScannerButtons.kmdr.po -o KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
+-install: KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
++include ../Makefile.subdir
+--- locale/de/Makefile
++++ locale/de/Makefile
+@@ -1,7 +1 @@
+-all: KScannerButtons.kmdr.po
+-	msgfmt KScannerButtons.kmdr.po -o KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
+-install: KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
++include ../Makefile.subdir
+--- locale/es/Makefile
++++ locale/es/Makefile
+@@ -1,7 +1 @@
+-all: KScannerButtons.kmdr.po
+-	msgfmt KScannerButtons.kmdr.po -o KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
+-install: KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
++include ../Makefile.subdir
+--- locale/fr/Makefile
++++ locale/fr/Makefile
+@@ -1,7 +1 @@
+-all: KScannerButtons.kmdr.po
+-	msgfmt KScannerButtons.kmdr.po -o KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
+-install: KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
++include ../Makefile.subdir
+--- locale/pt_BR/Makefile
++++ locale/pt_BR/Makefile
+@@ -1,7 +1 @@
+-all: KScannerButtons.kmdr.po
+-	msgfmt KScannerButtons.kmdr.po -o KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
+-install: KScannerButtons.mo
+-	cp -f KScannerButtons.mo /usr/share/locale/`basename \`pwd\``/LC_MESSAGES/
+-
++include ../Makefile.subdir
+--- locale/Makefile
++++ locale/Makefile
+@@ -0,0 +1,6 @@
++SUBDIRS = $(patsubst %/Makefile,%,$(wildcard */Makefile))
++
++all install: 
++	set -e ; for d in $(SUBDIRS) ; do $(MAKE) -C $$d LANG=$$d $@ ; done
++
++.PHONY: all install
+--- locale/Makefile.subdir
++++ locale/Makefile.subdir
+@@ -0,0 +1,13 @@
++LANG = $(notdir $(PWD))
++DESTDIR =
++LOCALEDIR = /usr/share/locale
++
++all: KScannerButtons.mo
++
++KScannerButtons.mo: KScannerButtons.kmdr.po
++	msgfmt $^ -o $@
++
++install: KScannerButtons.mo
++	install -D -m 0644 KScannerButtons.mo $(DESTDIR)$(LOCALEDIR)/$(LANG)/LC_MESSAGES/KScannerButtons.mo
++
++.PHONY: all install
+
