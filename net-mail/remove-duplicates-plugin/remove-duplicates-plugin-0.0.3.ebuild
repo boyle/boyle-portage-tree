@@ -8,6 +8,7 @@ DESCRIPTION="Evolution E Plugin -- Remove Duplicate Emails"
 HOMEPAGE="http://www.advogato.org/person/garnacho/diary.html"
 SRC_URI="http://www.gnome.org/~carlosg/stuff/evolution/${P}.tar.gz"
 
+
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="amd64 ~x86"
