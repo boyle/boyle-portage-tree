@@ -15,7 +15,8 @@ IUSE="adf doc djvu gocr tesseract unpaper"
 
 DEPEND="dev-lang/perl"
 
-RDEPEND=">=dev-perl/gtk2-perl-1.140-r1	
+RDEPEND=">=dev-perl/gtk2-perl-1.140-r1
+    dev-perl/Gtk2-ImageView
 	dev-perl/PDF-API2
 	dev-perl/Gtk2-Ex-Simple-List
 	>=dev-perl/Locale-gettext-1.05
@@ -23,13 +24,13 @@ RDEPEND=">=dev-perl/gtk2-perl-1.140-r1
 	media-gfx/imagemagick
 	media-gfx/sane-backends
 	media-libs/tiff
-	x11-misc/xdg-utils
 	adf? ( media-gfx/sane-frontends )
 	doc? ( dev-perl/Gtk2-Ex-PodViewer )
+	unpaper? ( media-gfx/unpaper )
+	x11-misc/xdg-utils
 	djvu? ( app-text/djvu )
 	gocr? ( app-text/gocr )
-	tesseract? ( app-text/tesseract )
-	unpaper? ( media-gfx/unpaper )"
+	tesseract? ( app-text/tesseract )"
 	
 src_install() {
 	perl-module_src_install
