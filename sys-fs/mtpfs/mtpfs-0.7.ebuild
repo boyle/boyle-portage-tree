@@ -16,6 +16,7 @@ SLOT="0"
 IUSE="debug"
 
 src_compile() {
+	cd ${P}.orig
 	# To enable debugging info use the --enable-debug option when running
 	# ./configure
 	use debug && local debugconf="--enable-debug"
