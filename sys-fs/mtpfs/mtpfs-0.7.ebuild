@@ -25,8 +25,8 @@ src_compile() {
 }
 
 src_install() {
-	emake DESTDIR="${D}" install || die "emake install failed"
-	dodoc README NEWS ChangeLog AUTHORS
+	doins ${PN} || die "doins failed"
+	dodoc README NEWS ChangeLog AUTHORS || die "dodoc failed"
 
 	einfo "To mount a device run: mtpfs <mount_point>"
 	einfo "To umount do: fusermount -u <mount_point>"
