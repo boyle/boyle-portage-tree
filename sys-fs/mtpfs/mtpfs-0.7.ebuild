@@ -26,7 +26,7 @@ src_compile() {
 
 src_install() {
 	cd ${P}.orig
-	doins ${PN} || die "doins failed"
+	dobin ${PN} || die "dobin failed"
 	dodoc README NEWS ChangeLog AUTHORS || die "dodoc failed"
 
 	einfo "To mount a device run: mtpfs <mount_point>"
