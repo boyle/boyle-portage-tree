@@ -25,6 +25,7 @@ src_compile() {
 }
 
 src_install() {
+	cd ${P}.orig
 	doins ${PN} || die "doins failed"
 	dodoc README NEWS ChangeLog AUTHORS || die "dodoc failed"
 
