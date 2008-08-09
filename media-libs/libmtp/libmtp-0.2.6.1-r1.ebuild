@@ -21,7 +21,7 @@ src_unpack() {
 	unpack ${A}
 	cd "${S}"
 	epatch "${FILESDIR}"/${P}-deprecated-keys.patch
-	epatch "${FILESDIR}"/libmtp-0.3.0-deprecated-keys.patch
+	epatch "${FILESDIR}"/libmtp-0.3.0-samsung-playlist.patch
 }
 
 src_install() {
