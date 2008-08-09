@@ -2,6 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/media-libs/libmtp/libmtp-0.3.0.ebuild,v 1.1 2008/07/05 12:26:04 drac Exp $
 
+inherit eutils
+
 DESCRIPTION="An implementation of Microsoft's Media Transfer Protocol (MTP)."
 HOMEPAGE="http://libmtp.sourceforge.net"
 SRC_URI="mirror://sourceforge/${PN}/${P}.tar.gz"
