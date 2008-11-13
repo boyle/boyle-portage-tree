@@ -16,13 +16,18 @@ IUSE=""
 DEPEND="${DEPEND}
          >=virtual/jdk-1.6"
 
+src_unpack() {
+		unpack ${A}
+		cd "${S}"
+
+        # fix .lib -> .o in Makefile
+        epatch ${FILESDIR}/Makefile-1.2.3.patch || die
+
+        # fix client->server in libjvm call
+        epatch ${FILESDIR}/__java__.cc-1.2.3.patch || die
+}
+
 src_compile() {
-		# fix .lib -> .o in Makefile
-		epatch ${FILESDIR}/Makefile-1.2.3.patch || die
-
-		# fix client->server in libjvm call
-		epatch ${FILESDIR}/__java__.cc-1.2.3.patch || die
-
 		# tell configure where java can be found
 		JAVA_HOME=$(java-config --jre-home) 
 		JAVAC=$(java-config --javac) 
