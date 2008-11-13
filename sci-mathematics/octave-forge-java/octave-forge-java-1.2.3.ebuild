@@ -21,6 +21,33 @@ DEPEND="${DEPEND}
 PATCHES="Makefile-1.2.3.patch __java__.cc-1.2.3.patch"
 
 
+# STUPID $PATCHES needs to not have quotes so we get to reimpliment the entire function
+#################################################################
+# since we use octave's package installed for compiling we need
+# to provide the raw gzipped octave-forge source tarballs. 
+# Hence, if there are no patches to apply, we simply copy the
+# tarball to ${WORKDIR}. If there are patches we unpack
+# the tarball in ${WORKDIR}, apply the patches, and repack it.
+#################################################################
+octave-forge_src_unpack() {
+    cd "${WORKDIR}"
+
+    if [[ -n "${PATCHES}" ]]; then
+        unpack "${A}"
+        pushd "${S}" >& /dev/null
+        for patch in ${PATCHES}; do # <<<<<<<< BLOOPER HERE removed quotes
+            epatch "${FILESDIR}/${patch}"
+        done
+        popd >& /dev/null
+        tar czf "${OCT_PKG_TARBALL}" "${OCT_PKG}" \
+            && rm -fr "${OCT_PKG}" \
+            || die "Failed to recompress the source"
+    else
+        cp "${DISTDIR}/${OCT_PKG_TARBALL}" ./
+    fi
+}
+
+
 src_compile() {
 		# tell configure where java can be found
 		JAVA_HOME=$(java-config --jre-home) 
