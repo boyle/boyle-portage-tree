@@ -16,16 +16,10 @@ IUSE=""
 DEPEND="${DEPEND}
          >=virtual/jdk-1.6"
 
-src_unpack() {
-		unpack ${A}
-		cd "${S}"
+# Makefile: fix .lib -> .o in Makefile
+# __java__.cc: fix client->server in libjvm call
+PATCHES="Makefile-1.2.3.patch __java__.cc-1.2.3.patch"
 
-        # fix .lib -> .o in Makefile
-        epatch ${FILESDIR}/Makefile-1.2.3.patch || die
-
-        # fix client->server in libjvm call
-        epatch ${FILESDIR}/__java__.cc-1.2.3.patch || die
-}
 
 src_compile() {
 		# tell configure where java can be found
