@@ -64,5 +64,5 @@ src_install() {
 		cp ${WORKDIR}/src/octave.jar   ${WORKDIR}/inst/ || die 
 
 		octave-forge_src_install
-		java-pkg_dojar src/octave.jar
+		java-pkg_dojar {$WORKDIR}/src/octave.jar
 }
