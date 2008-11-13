@@ -58,10 +58,10 @@ src_compile() {
 src_install() {
 # TODO __java__.oct seems to be incorrectly installed by
 # octave-forge_src_install(), this is a work-around that gets it installed
-		cp ${S}/src/__java__.oct ${S}/inst/ || die 
-		cp ${S}/src/__java__.h ${S}/inst/ || die 
-		cp ${S}/src/__java__.o ${S}/inst/ || die 
-		cp ${S}/src/octave.jar ${S}/inst/ || die 
+		cp ${WORKDIR}/src/__java__.oct ${WORKDIR}/inst/ || die 
+		cp ${WORKDIR}/src/__java__.h   ${WORKDIR}/inst/ || die 
+		cp ${WORKDIR}/src/__java__.o   ${WORKDIR}/inst/ || die 
+		cp ${WORKDIR}/src/octave.jar   ${WORKDIR}/inst/ || die 
 
 		octave-forge_src_install
 		java-pkg_dojar src/octave.jar
