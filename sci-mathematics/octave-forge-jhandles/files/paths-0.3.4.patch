@@ -1,6 +1,6 @@
-diff -ur jhandles-0.3.4/PKG_ADD jhandles-0.3.4-new/PKG_ADD
+diff -ru jhandles-0.3.4/PKG_ADD jhandles-0.3.4-new/PKG_ADD
 --- jhandles-0.3.4/PKG_ADD	2008-08-24 12:13:48.000000000 -0400
-+++ jhandles-0.3.4-new/PKG_ADD	2008-11-13 00:36:27.000000000 -0500
++++ jhandles-0.3.4-new/PKG_ADD	2008-11-21 20:30:39.000000000 -0500
 @@ -1,8 +1,8 @@
 -if (file_in_path (EXEC_PATH, "jogl.jar"))
 -  if (file_in_path (EXEC_PATH, "gluegen-rt.jar"))
@@ -14,7 +14,15 @@ diff -ur jhandles-0.3.4/PKG_ADD jhandles-0.3.4-new/PKG_ADD
    javaaddpath (file_in_loadpath ("jhandles.jar"));
  
    dispatch ("get", "__jhandles_get", "any");
-diff -ur jhandles-0.3.4/src/configure jhandles-0.3.4-new/src/configure
+@@ -28,6 +28,7 @@
+ 
+   java_invoke ("java.lang.System", "setProperty", "octave.jhandles.path", ...
+     fileparts (mfilename ("fullpath")));
++  java_invoke('java.lang.System', 'setProperty', 'java.library.path', '/usr/lib64/gluegen:/usr/lib64/jogl');
+ else
+   warning ("JOGL could not be found, jhandles is not loaded");
+ endif
+diff -ru jhandles-0.3.4/src/configure jhandles-0.3.4-new/src/configure
 --- jhandles-0.3.4/src/configure	2008-08-24 12:37:20.000000000 -0400
 +++ jhandles-0.3.4-new/src/configure	2008-11-13 21:39:36.000000000 -0500
 @@ -689,7 +689,6 @@
@@ -133,7 +141,7 @@ diff -ur jhandles-0.3.4/src/configure jhandles-0.3.4-new/src/configure
      break
    elif $ac_last_try; then
      { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
-diff -ur jhandles-0.3.4/src/configure.base jhandles-0.3.4-new/src/configure.base
+diff -ru jhandles-0.3.4/src/configure.base jhandles-0.3.4-new/src/configure.base
 --- jhandles-0.3.4/src/configure.base	2008-08-24 12:13:46.000000000 -0400
 +++ jhandles-0.3.4-new/src/configure.base	2008-11-13 21:39:36.000000000 -0500
 @@ -241,9 +241,12 @@
