@@ -1,0 +1,21 @@
+*** src/bluetooth.conf	2009-09-02 15:06:41.497388991 +1000
+--- src/bluetooth (copy).conf	2009-09-02 15:17:42.651140470 +1000
+***************
+*** 13,19 ****
+      <allow send_interface="org.bluez.Agent"/>
+    </policy>
+  
+!   <policy at_console="true">
+      <allow send_destination="org.bluez"/>
+    </policy>
+  
+--- 13,21 ----
+      <allow send_interface="org.bluez.Agent"/>
+    </policy>
+  
+!   <!-- allow users of bluetooth group (bluetooth users) to 
+!        communicate with bluetoothd -->
+!   <policy group="bluetooth">
+      <allow send_destination="org.bluez"/>
+    </policy>
+  
