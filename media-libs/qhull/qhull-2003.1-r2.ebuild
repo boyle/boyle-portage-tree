@@ -12,7 +12,7 @@ SRC_URI="${HOMEPAGE}/download/${P}.tar.gz"
 
 SLOT="0"
 LICENSE="BSD"
-KEYWORDS="alpha amd64 ~hppa ppc ~ppc64 ~sparc ~x86"
+KEYWORDS="alpha ~amd64 ~hppa ppc ~ppc64 ~sparc ~x86"
 IUSE="doc"
 
 pkg_setup() {
