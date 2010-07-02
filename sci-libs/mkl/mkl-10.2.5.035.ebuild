@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/sci-libs/mkl/mkl-10.0.5.025.ebuild,v 1.4 2010/06/17 01:54:40 jsbronder Exp $
 
-inherit eutils toolchain-funcs fortran check-reqs
+inherit eutils toolchain-funcs fortran check-reqs #flag-o-matic
 
 PID=1753
 PB=${PN}
@@ -26,6 +26,15 @@ RDEPEND="${DEPEND}
 MKL_DIR=/opt/intel/${PN}/${PV}
 INTEL_LIC_DIR=/opt/intel/licenses
 
+# TODO FIXME: something more specific here?
+# Note: there are a ton of EXECSTACK files and they're binary source
+#QA_EXECSTACK_amd64="opt/intel/${PN}/${PV}/lib/em64t/.*.a:.*
+#					opt/intel/${PN}/${PV}/lib/em64t/.*.so"
+QA_EXECSTACK="*"
+
+# text relocations: only one -- libmkl_def.so
+QA_TEXTRELS="*"
+
 pkg_setup() {
 	# Check the license
 	if [[ -z ${MKL_LICENSE} ]]; then
@@ -39,6 +48,16 @@ pkg_setup() {
 		eerror "export MKL_LICENSE=/my/license/file emerge mkl"
 		die "license setup failed"
 	fi
+
+	# TODO FIXME - a patch that adds the following snippet to .S files is
+	# preferred:
+#	#if defined(__linux__) && defined(__ELF__)
+#	.section .note.GNU-stack,"",%progbits
+#	#endif
+	# instead fix CFLAGS to create non-executable .so (assembly)
+#	append-flags -Wa,--noexecstack
+	# instead fix CFLAGS to create non-executable .so (linker)
+#	append-ldflags -Wl,-z,noexecstack
 
 	# Check if we have enough free diskspace to install
 	CHECKREQS_DISK_BUILD="1100"
@@ -240,7 +259,7 @@ mkl_add_profile() {
 	cd "${S}"
 	local prof=${1}
 	for x in blas cblas lapack; do
-		cat >> ${x}-${prof}.pc <<-EOF
+		cat > ${x}-${prof}.pc <<-EOF
 			prefix=${MKL_DIR}
 			libdir=${MKL_LIBDIR}
 			includedir=\${prefix}/include
@@ -249,18 +268,25 @@ mkl_add_profile() {
 			Version: ${PV}
 			URL: ${HOMEPAGE}
 		EOF
+		einfo "AB TODO 0 ${x}-${prof}"
+		cat ${x}-${prof}.pc
 	done
+einfo "AB TODO 1 cblas-${prof}"
+cat cblas-${prof}.pc
 	cat >> blas-${prof}.pc <<-EOF
-		Libs: -Wl,--no-as-needed -L\${libdir} ${2} ${3} -lmkl_core ${4} -lpthread
+		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group ${2} ${3} -lmkl_core -Wl,--end-group ${4} -lpthread
 	EOF
+einfo "AB TODO cblas 1"
 	cat >> cblas-${prof}.pc <<-EOF
 		Requires: blas
-		Libs: -Wl,--no-as-needed -L\${libdir} ${2} ${3} -lmkl_core ${4} -lpthread
+		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group ${2} ${3} -lmkl_core -Wl,--end-group ${4} -lpthread
 		Cflags: -I\${includedir}
 	EOF
+einfo "AB TODO 2 cblas-${prof}"
+cat cblas-${prof}.pc
 	cat >> lapack-${prof}.pc <<-EOF
 		Requires: blas
-		Libs: -Wl,--no-as-needed -L\${libdir} ${2} ${3} -lmkl_core -lmkl_lapack ${4} -lpthread
+		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group ${2} ${3} -lmkl_core -lmkl_lapack -Wl,--end-group ${4} -lpthread
 	EOF
 	insinto ${MKL_LIBDIR}
 	for x in blas cblas lapack; do
@@ -277,7 +303,7 @@ mkl_make_profiles() {
 	has_version 'dev-lang/ifc' && clib="intel"
 	built_with_use sys-devel/gcc fortran && clib="${clib} gf"
 	local slib="-lmkl_sequential"
-	local rlib="-liomp5"
+	local rlib="-fopenmp" #GCC 4.2 is now unmasked, so use gnu openmp impl. (was -liomp5)
 	local pbase=${PN}
 	for c in ${clib}; do
 		local ilib="-lmkl_${c}_lp64"
@@ -306,7 +332,8 @@ src_install() {
 
 	# install main stuff: cp faster than doins
 	einfo "Installing files..."
-	local cpdirs="benchmarks doc examples include interfaces lib man tests"
+	local cpdirs="benchmarks doc include interfaces lib man"
+	# skip: examples tests
 	local doinsdirs="tools"
 	cp -pPR ${cpdirs} "${D}"${MKL_DIR} \
 		|| die "installing mkl failed"
