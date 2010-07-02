@@ -4,11 +4,11 @@
 
 inherit eutils toolchain-funcs fortran check-reqs
 
-PID=1232
+PID=1753
 PB=${PN}
 DESCRIPTION="Intel(R) Math Kernel Library: linear algebra, fft, math functions"
 HOMEPAGE="http://developer.intel.com/software/products/mkl/"
-SRC_URI="http://registrationcenter-download.intel.com/irc_nas/${PID}/l_${PN}_p_${PV}.tgz"
+SRC_URI="http://registrationcenter-download.intel.com/irc_nas/${PID}/l_${PN}_p_${PV}.tar.gz"
 
 KEYWORDS="-* ~amd64 ~ia64 ~x86"
 SLOT="0"
@@ -74,13 +74,14 @@ pkg_setup() {
 src_unpack() {
 
 	unpack ${A}
-	cd l_${PN}_*_${PV}/install
+	cd l_${PN}_*_${PV}
 
 	cp ${MKL_LICENSE} "${WORKDIR}"/
 	MKL_LIC="$(basename ${MKL_LICENSE})"
 
 	# binary blob extractor installs rpm leftovers in /opt/intel
 	addwrite /opt/intel
+	addwrite /usr/local/share/macrovision
 	# undocumented features: INSTALLMODE_mkl=NONRPM
 
 	# We need to install mkl non-interactively.
@@ -89,27 +90,39 @@ src_unpack() {
 	# The file will be instman/mkl.ini
 	# Then check it and modify the ebuild-created one below
 	# --norpm is required to be able to install 10.x
+		#[MKL]
 	cat > mkl.ini <<-EOF
-		[MKL]
-		EULA_ACCEPT_REJECT=ACCEPT
-		FLEXLM_LICENSE_LOCATION=${WORKDIR}/${MKL_LIC}
-		INSTALLMODE_mkl=NONRPM
-		INSTALL_DESTINATION=${S}
+		PSET_LICENSE_FILE=${WORKDIR}/${MKL_LIC}
+		ACTIVATION=license_file
+		CONTINUE_WITH_INSTALLDIR_OVERWRITE=yes
+		CONTINUE_WITH_OPTIONAL_ERROR=yes
+		PSET_INSTALL_DIR=${S}
+		INSTALL_MODE=NONRPM
+		ACCEPT_EULA=accept
 	EOF
 	einfo "Extracting ..."
-	./install \
-		--silent ./mkl.ini \
-		--installpath "${S}" \
-		--log log.txt &> /dev/null
 
-	if [[ -z $(find "${S}" -name libmkl.so) ]]; then
+	# make sure the install doesn't fail because of a previous failed install
+	rm -f /opt/intel/.*mkl*.log /opt/intel/intel_sdp_products.db
+	# test that the install script exists
+	./install.sh \
+		--silent ./mkl.ini \
+		&> ./log.txt
+
+	if [[ -z $(find "${S}/lib" -name libmkl_core.so) ]]; then
 		eerror "Could not find extracted files"
+		eerror "expected at ${S} (lib/libmkl_core.so)"
 		eerror "See ${PWD}/log.txt to see why"
 		die "extracting failed"
 	fi
 	# remove left over
 	rm -f /opt/intel/.*mkl*.log /opt/intel/intel_sdp_products.db
-
+	rm -rf ${S}/tmp*
+	# clean up macrovision junk
+	rm -f /usr/local/share/macrovision/storage/FLEXnet/INTEL_*.data
+	rmdir --ignore-fail-on-non-empty /usr/local/share/macrovision/storage/FLEXnet
+	rmdir --ignore-fail-on-non-empty /usr/local/share/macrovision/storage
+	rmdir --ignore-fail-on-non-empty /usr/local/share/macrovision
 	# remove unused stuff and set up intel names
 	rm -rf "${WORKDIR}"/l_*
 
@@ -145,7 +158,8 @@ src_compile() {
 	cd "${S}"/interfaces
 	if use fortran95; then
 		einfo "Compiling fortan95 static lib wrappers"
-		local myconf="lib${MKL_ARCH}"
+		# TODO INSTALL_DIR should be to somewhere that will get installed??
+		local myconf="lib${MKL_ARCH} INSTALL_DIR=lib95"
 		[[ ${FORTRANC} == gfortran ]] && \
 			myconf="${myconf} FC=gfortran"
 		if use int64; then
@@ -162,7 +176,8 @@ src_compile() {
 
 	if use fftw; then
 		local fftwdirs="fftw2xc fftw2xf fftw3xc fftw3xf"
-		local myconf="lib${MKL_ARCH} compiler=${MKL_CC}"
+		# fftw makefile has dependancy issues w/ -j5... force -j1
+		local myconf="-j1 lib${MKL_ARCH} compiler=${MKL_CC}"
 		if use mpi; then
 			fftwdirs="${fftwdirs} fftw2x_cdft"
 			myconf="${myconf} mpi=${MKL_MPI}"
@@ -204,13 +219,13 @@ mkl_make_generic_profile() {
 	# don't make them in FILESDIR, it changes every major version
 	cat  > eselect.blas <<-EOF
 		${MKL_LIBDIR}/libmkl_${MKL_KERN}.a /usr/@LIBDIR@/libblas.a
-		${MKL_LIBDIR}/libmkl.so /usr/@LIBDIR@/libblas.so
-		${MKL_LIBDIR}/libmkl.so /usr/@LIBDIR@/libblas.so.0
+		${MKL_LIBDIR}/libmkl_core.so /usr/@LIBDIR@/libblas.so
+		${MKL_LIBDIR}/libmkl_core.so /usr/@LIBDIR@/libblas.so.0
 	EOF
 	cat  > eselect.cblas <<-EOF
 		${MKL_LIBDIR}/libmkl_${MKL_KERN}.a /usr/@LIBDIR@/libcblas.a
-		${MKL_LIBDIR}/libmkl.so /usr/@LIBDIR@/libcblas.so
-		${MKL_LIBDIR}/libmkl.so /usr/@LIBDIR@/libcblas.so.0
+		${MKL_LIBDIR}/libmkl_core.so /usr/@LIBDIR@/libcblas.so
+		${MKL_LIBDIR}/libmkl_core.so /usr/@LIBDIR@/libcblas.so.0
 		${MKL_DIR}/include/mkl_cblas.h /usr/include/cblas.h
 	EOF
 	cat > eselect.lapack <<-EOF
@@ -225,7 +240,7 @@ mkl_add_profile() {
 	cd "${S}"
 	local prof=${1}
 	for x in blas cblas lapack; do
-		cat > ${x}-${prof}.pc <<-EOF
+		cat >> ${x}-${prof}.pc <<-EOF
 			prefix=${MKL_DIR}
 			libdir=${MKL_LIBDIR}
 			includedir=\${prefix}/include
