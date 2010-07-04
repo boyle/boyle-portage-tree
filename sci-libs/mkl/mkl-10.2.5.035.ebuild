@@ -274,19 +274,19 @@ mkl_add_profile() {
 einfo "AB TODO 1 cblas-${prof}"
 cat cblas-${prof}.pc
 	cat >> blas-${prof}.pc <<-EOF
-		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group ${2} ${3} -lmkl_core -Wl,--end-group ${4} -lpthread
+		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group,${2},${3},-lmkl_core,--end-group ${4} -lpthread
 	EOF
 einfo "AB TODO cblas 1"
 	cat >> cblas-${prof}.pc <<-EOF
 		Requires: blas
-		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group ${2} ${3} -lmkl_core -Wl,--end-group ${4} -lpthread
+		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group,${2},${3},-lmkl_core,--end-group ${4} -lpthread
 		Cflags: -I\${includedir}
 	EOF
 einfo "AB TODO 2 cblas-${prof}"
 cat cblas-${prof}.pc
 	cat >> lapack-${prof}.pc <<-EOF
 		Requires: blas
-		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group ${2} ${3} -lmkl_core -lmkl_lapack -Wl,--end-group ${4} -lpthread
+		Libs: -Wl,--no-as-needed -L\${libdir} -Wl,--start-group,${2},${3},-lmkl_core,-lmkl_lapack,--end-group ${4} -lpthread
 	EOF
 	insinto ${MKL_LIBDIR}
 	for x in blas cblas lapack; do
