@@ -1,0 +1,42 @@
+# ChangeLog for dev-ruby/autotest-rails
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: /var/cvsroot/gentoo-x86/dev-ruby/autotest-rails/ChangeLog,v 1.10 2010/06/12 20:36:10 graaff Exp $
+
+*autotest-rails-4.1.0-r1 (12 Jun 2010)
+
+  12 Jun 2010; Hans de Graaff <graaff@gentoo.org>
+  +autotest-rails-4.1.0-r1.ebuild:
+  Convert to ruby-fakegem.
+
+  05 Sep 2009; Brent Baude <ranger@gentoo.org> autotest-rails-4.1.0.ebuild:
+  Marking autotest-rails-4.1.0 ppc64 for bug 280665
+
+  29 Aug 2009; nixnut <nixnut@gentoo.org> autotest-rails-4.1.0.ebuild:
+  ppc stable #280665
+
+  25 Aug 2009; Raúl Porcel <armin76@gentoo.org> autotest-rails-4.1.0.ebuild:
+  ia64 stable wrt #280665
+
+  14 Aug 2009; Markus Meier <maekke@gentoo.org> autotest-rails-4.1.0.ebuild:
+  amd64/x86 stable, bug #280665
+
+  09 Aug 2009; nixnut <nixnut@gentoo.org> autotest-rails-4.1.0.ebuild:
+  ~ppc'd
+
+  04 Jul 2009; Brent Baude <ranger@gentoo.org> autotest-rails-4.1.0.ebuild:
+  Marking autotest-rails-4.1.0 ~ppc64 for bug 273414
+
+  24 Jun 2009; Raúl Porcel <armin76@gentoo.org>
+  autotest-rails-4.1.0.ebuild:
+  Add ~ia64 wrt #273414
+
+  09 Jun 2009; Ferris McCormick <fmccor@gentoo.org>
+  autotest-rails-4.1.0.ebuild:
+  Add ~sparc keyword, Bug #273414.
+
+*autotest-rails-4.1.0 (09 Jun 2009)
+
+  09 Jun 2009; Hans de Graaff <graaff@gentoo.org>
+  +autotest-rails-4.1.0.ebuild, +metadata.xml:
+  Initial import. Split off from dev-ruby/zentest.
+
