@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/sci-libs/mkl/mkl-10.0.5.025.ebuild,v 1.4 2010/06/17 01:54:40 jsbronder Exp $
 
-inherit eutils toolchain-funcs fortran check-reqs #flag-o-matic
+inherit eutils toolchain-funcs check-reqs #flag-o-matic #fortran
 
 PID=1753
 PB=${PN}
