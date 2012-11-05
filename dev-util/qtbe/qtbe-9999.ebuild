@@ -25,6 +25,6 @@ SLOT="0"
 KEYWORDS="~amd64"
 IUSE=""
 
-RDEPEND="dev-python/pyside dev-util/be"
+DEPEND="dev-python/pyside dev-util/be"
 
 RDEPEND="${DEPEND}"
