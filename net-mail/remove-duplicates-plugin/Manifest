@@ -1,8 +1,0 @@
-DIST remove-duplicates-plugin-0.0.3.tar.gz 361300 RMD160 5859d89c5e7c2a231031845f117471ea14d18443 SHA1 7a3bac77640de701acb0bf066928c33ff480ee60 SHA256 fa76e4c4fb4f0de7beb6e221bcfe6b02cbd9b06d143d0e9c27465232f3978b38
-EBUILD remove-duplicates-plugin-0.0.3.ebuild 550 RMD160 6ffbc218a79a566c9735c65df3b47869044d9a7d SHA1 4f353ab48b6e3bac4d3a12c4d4e317b677c3a46f SHA256 6e5d3c31d19df0c64ba6aebad99ea74493f9d3e6cbc6a085ee9f83cb5ad32757
-MD5 029bfd571e5f7221495e75d6e8d2783e remove-duplicates-plugin-0.0.3.ebuild 550
-RMD160 6ffbc218a79a566c9735c65df3b47869044d9a7d remove-duplicates-plugin-0.0.3.ebuild 550
-SHA256 6e5d3c31d19df0c64ba6aebad99ea74493f9d3e6cbc6a085ee9f83cb5ad32757 remove-duplicates-plugin-0.0.3.ebuild 550
-MD5 9bd14912659db7fcaddd0a352d0208d6 files/digest-remove-duplicates-plugin-0.0.3 292
-RMD160 ea861bdf7281a9e1281b8792d2dbea3fdfa059d6 files/digest-remove-duplicates-plugin-0.0.3 292
-SHA256 01351a6f45e494321db50b25cb6e376a9d63b5c03fd6aa1be21e977665ee4848 files/digest-remove-duplicates-plugin-0.0.3 292
