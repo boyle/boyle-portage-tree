@@ -33,9 +33,9 @@ src_unpack() {
 	mv * ${P}
 }
 
-src_prepare() {
-	epatch "${FILESDIR}/${P}-gcc47.patch"
-}
+#src_prepare() {
+#	epatch "${FILESDIR}/${P}-gcc47.patch"
+#}
 
 src_compile() {
 	emake CC="$(tc-getCC)" \
