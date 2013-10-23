@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/x11-misc/slimlock/slimlock-0.11-r1.ebuild,v 1.1 2012/08/18 18:57:21 titanofold Exp $
 
-EAPI=4
+EAPI=5
 
 inherit eutils toolchain-funcs
 
@@ -28,14 +28,7 @@ DEPEND="${RDEPEND}"
 
 src_unpack() {
 	unpack ${A}
-
-	# GitHub tarballs the package under a randomly named TLD.
-	mv * ${P}
 }
-
-#src_prepare() {
-#	epatch "${FILESDIR}/${P}-gcc47.patch"
-#}
 
 src_compile() {
 	emake CC="$(tc-getCC)" \
