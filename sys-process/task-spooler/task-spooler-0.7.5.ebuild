@@ -1,4 +1,4 @@
-# Copyright 1999-2008 Gentoo Foundation
+# Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -18,22 +18,26 @@ RDEPEND=""
 
 src_unpack() {
 	unpack ${A}
-	S=$(dirname ${S})/ts-${PV}
+	S="$(dirname ${S})/ts-${PV}"
+}
+
+src_prepare() {
 	sed -i \
-		-e 's|CFLAGS=|CFLAGS+=|' \
-		-e 's|-g -O0||' \
-		${S}/Makefile || die "sed failed"
+		-e "s|CFLAGS=|CFLAGS+=|" \
+		-e "s|-g -O0||" \
+		"${S}/Makefile" || die "sed failed"
+	sed -i 's/\<ts\>/task-spooler/g' "${S}/ts.1"
+	sed -i 's/\<TS\>/task-spooler/g' "${S}/ts.1"
 }
 
 src_compile() {
-	#emake CC=$(tc-getCC) || die "emake failed"
 	emake || die "emake failed"
 }
 
 src_install() {
 	exeinto /usr/bin
-	doexe ts
-	doman ts.1
+	newexe ts ${PN}
+	newman ts.1 ${PN}.1
 	dodoc Changelog OBJECTIVES PORTABILITY PROTOCOL README TRICKS
 }
 
