@@ -1,0 +1,56 @@
+#!/sbin/runscript
+description="OpenLava workload job scheduler"
+
+LSF_CONF=/etc/openlava/lsf.conf
+required_files="$LSF_CONF"
+
+extra_commands="check kill"
+description_check="check configuration files"
+description_kill="pkill {lim,res,sbatchd,mbatchd}"
+
+check() {
+    . $LSF_CONF
+    export LSF_ENVDIR
+    export LSF_SERVERDIR
+    einfo "LIM configuration check"
+    /usr/sbin/lim -C
+    eend $?
+    einfo "MBATCHD configuration check"
+    /usr/sbin/mbatchd -C
+    eend $?
+    for i in lim res sbatchd mbatchd; do
+    	einfo "PIDs for $i: $(pidof $i)"
+    done
+    for i in lsid lsload bhosts bqueues bjobs; do
+       echo "\$ $i"
+       eval "$i"
+    done
+}
+
+kill() {
+    stop
+}
+
+depend() {
+	need net
+	use nfs
+}
+
+stop() {
+    for i in lim res sbatchd mbatchd; do
+        ebegin "Stopping $i: $(pidof $i)"
+        pkill $i
+        eend 0
+    done
+}
+
+start() {
+    . $LSF_CONF
+    export LSF_ENVDIR
+    export LSF_SERVERDIR
+    for i in lim res sbatchd mbatchd; do
+        ebegin "Starting $i"
+        /usr/sbin/$i &
+        eend $?
+    done
+}
