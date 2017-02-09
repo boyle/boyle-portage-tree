@@ -1,5 +1,5 @@
---- libsrc/occ/Partition_Spliter.cxx.old	2012-11-14 16:14:39.440625195 +0100
-+++ libsrc/occ/Partition_Spliter.cxx	2012-11-14 16:15:20.035646075 +0100
+--- /libsrc/occ/Partition_Spliter.cxx.old	2012-11-14 16:14:39.440625195 +0100
++++ /libsrc/occ/Partition_Spliter.cxx	2012-11-14 16:15:20.035646075 +0100
 @@ -1169,8 +1169,8 @@
            for (; j<=nbj && ok; ++j) {
              if (Extrema.IsMin(j)) {
@@ -11,8 +11,8 @@
  	    }
            }
          }
---- libsrc/occ/Partition_Inter3d.cxx.old	2012-11-14 16:13:11.149581085 +0100
-+++ libsrc/occ/Partition_Inter3d.cxx	2012-11-14 16:14:20.017615214 +0100
+--- /libsrc/occ/Partition_Inter3d.cxx.old	2012-11-14 16:13:11.149581085 +0100
++++ /libsrc/occ/Partition_Inter3d.cxx	2012-11-14 16:14:20.017615214 +0100
 @@ -243,9 +243,9 @@
        Standard_Integer i, nbExt = anExtPS.NbExt();
        Extrema_POnSurf aPOnSurf;

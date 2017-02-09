@@ -21,15 +21,17 @@ DEPEND="dev-tcltk/tix
 	dev-tcltk/togl:1.7
 	virtual/opengl
 	x11-libs/libXmu
-	opencascade? ( sci-libs/opencascade )
+	opencascade? ( >=sci-libs/opencascade-6.9.1 )
 	ffmpeg? ( media-video/ffmpeg )
 	jpeg? ( virtual/jpeg )
 	mpi? ( virtual/mpi ) "
 RDEPEND="${DEPEND}"
 # Note, MPI has not be tested.
 
-PATCHES="${FILESDIR}/${PN}-5.3-gui.patch"
-#PATCHES="${FILESDIR}/${PN}-5.x-missing-define.patch"
+#	${FILESDIR}/${PN}-5.x-compile-against-occ-6.5.x.patch
+PATCHES="${FILESDIR}/${PN}-5.3-gui.patch
+	${FILESDIR}/${PN}-5.3-opencascade.patch
+	${FILESDIR}/${PN}-5.x-missing-define.patch"
 src_prepare() {
 #	# Adapted from http://sourceforge.net/projects/netgen-mesher/forums/forum/905307/topic/5422824
 #	if use opencascade; then

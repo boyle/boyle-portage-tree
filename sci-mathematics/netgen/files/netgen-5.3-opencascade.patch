@@ -1,0 +1,31 @@
+--- /libsrc/occ/occgeom.hpp	2017-02-09 01:34:38.172433886 -0500
++++ /libsrc/occ/occgeom.hpp	2017-02-09 01:34:45.283479486 -0500
+@@ -385,7 +385,7 @@
+       void GetNotDrawableFaces (stringstream & str);
+       bool ErrorInSurfaceMeshing ();
+ 
+-     void WriteOCC_STL(char * filename);
++//     void WriteOCC_STL(char * filename);
+ 
+      virtual int GenerateMesh (Mesh*& mesh, MeshingParameters & mparam, 
+          int perfstepsstart, int perfstepsend);
+--- /libsrc/occ/occgeom.cpp	2017-02-09 01:34:58.975567262 -0500
++++ /libsrc/occ/occgeom.cpp	2017-02-09 01:35:15.709674497 -0500
+@@ -1033,7 +1033,7 @@
+ 
+ 
+ 
+-
++#if 0
+    void OCCGeometry :: WriteOCC_STL(char * filename)
+    {
+       cout << "writing stl..."; cout.flush();
+@@ -1045,7 +1045,7 @@
+ 
+       cout << "done" << endl;
+    }
+-
++#endif
+ 
+ 
+    // Philippose - 23/02/2009
