@@ -1,0 +1,11 @@
+--- a/configure.ac	2017-04-19 14:33:59.377708428 -0400
++++ b/configure.ac	2017-04-19 14:34:06.392733734 -0400
+@@ -74,7 +74,7 @@
+ AC_ARG_WITH([togl], 
+         [AC_HELP_STRING([--with-togl=dir],[directory containing libTogl1.7])],
+         [togldir=$withval]
+-        [togllibfl="-L$withval$"]
++        [togllibfl="-L$withval"]
+         )
+ #        [togllibfl="-L$(TK_BIN_DIR)/Togl1.7"]
+ #        [togllibfl="-L/usr/local/lib/Togl1.7"]
