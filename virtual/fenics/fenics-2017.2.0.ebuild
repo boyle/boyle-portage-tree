@@ -7,9 +7,10 @@ DESCRIPTION="Virtual package for FEniCS Finite Element Software"
 
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="+mshr"
+IUSE="+mshr +paraview"
 
 RDEPEND="
 	mshr? ( =dev-python/mshr-${PV} )
+	paraview ? =sci-visualization/paraview-5.3.0
 	=sci-mathematics/dolfin-${PV}
 "
