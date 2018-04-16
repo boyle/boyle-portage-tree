@@ -270,7 +270,8 @@ src_configure() {
 }
 
 src_compile() {
-	cmake-utils_src_compile
+	ewarn "parallel build disabled: make -j1"
+	cmake-utils_src_compile -j1
 }
 
 src_install() {
