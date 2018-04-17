@@ -22,7 +22,24 @@ IUSE="boost cg coprocessing development doc examples ffmpeg mpi mysql nvcontrol 
 RESTRICT="test"
 
 REQUIRED_USE="python? ( mpi ${PYTHON_REQUIRED_USE} )
-	mysql? ( sqlite )" # "vtksqlite, needed by vtkIOSQL" and "vtkIOSQL, needed by vtkIOMySQL"
+	mysql? ( sqlite )
+	mpi? ( !plugins )"
+# mysql? ( sqlite ) <-- "vtksqlite, needed by vtkIOSQL" and "vtkIOSQL, needed by vtkIOMySQL"
+#
+# TODO mpi? ( !plugins ):
+# In file included from /var/tmp/notmpfs-portage-tmp/portage/sci-visualization/paraview-5.3.0-r1/work/ParaView-v5.3.0/Plugins/H5PartReader/H5Part/src/H5Part.h:16:0,
+#                 from /var/tmp/notmpfs-portage-tmp/portage/sci-visualization/paraview-5.3.0-r1/work/ParaView-v5.3.0/Plugins/H5PartReader/vtkH5PartReader.cxx:84:
+#/var/tmp/notmpfs-portage-tmp/portage/sci-visualization/paraview-5.3.0-r1/work/ParaView-v5.3.0/Plugins/H5PartReader/H5Part/src/H5PartTypes.h:21:14: error: conflicting declaration ‘typedef int MPI_Comm’
+# typedef int  MPI_Comm;
+#              ^~~~~~~~
+#In file included from /usr/include/mpi.h:10:0,
+#                 from /usr/include/H5public.h:63,
+#                 from /usr/include/hdf5.h:24,
+#                 from /var/tmp/notmpfs-portage-tmp/portage/sci-visualization/paraview-5.3.0-r1/work/ParaView-v5.3.0/Plugins/H5PartReader/H5Part/src/H5Part.h:6,
+#                 from /var/tmp/notmpfs-portage-tmp/portage/sci-visualization/paraview-5.3.0-r1/work/ParaView-v5.3.0/Plugins/H5PartReader/vtkH5PartReader.cxx:84:
+#/usr/include/x86_64-pc-linux-gnu/mpi.h:329:37: note: previous declaration as ‘typedef struct ompi_communicator_t* MPI_Comm’
+# typedef struct ompi_communicator_t *MPI_Comm;
+#                                     ^~~~~~~~
 
 RDEPEND="
 	dev-libs/expat
@@ -270,8 +287,7 @@ src_configure() {
 }
 
 src_compile() {
-	ewarn "parallel build disabled: make -j1"
-	cmake-utils_src_compile -j1
+	cmake-utils_src_compile
 }
 
 src_install() {
