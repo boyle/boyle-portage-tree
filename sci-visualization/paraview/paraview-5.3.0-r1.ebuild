@@ -287,7 +287,8 @@ src_configure() {
 }
 
 src_compile() {
-	cmake-utils_src_compile
+	# parallel compile seems broken
+	cmake-utils_src_compile -j1
 }
 
 src_install() {
