@@ -3,7 +3,7 @@
 
 EAPI=6
 
-PYTHON_COMPAT=( python3_{4,5,6} )
+PYTHON_COMPAT=( python2_7 )
 inherit eutils cmake-utils python-single-r1 multilib toolchain-funcs versionator
 
 MAIN_PV=$(get_major_version)
@@ -19,7 +19,7 @@ LICENSE="paraview GPL-2"
 KEYWORDS="~amd64 ~x86"
 SLOT="0"
 IUSE="boost cg coprocessing development doc examples ffmpeg mpi mysql nvcontrol openmp plugins python +qt5 sqlite tcl test tk"
-RESTRICT="test"
+RESTRICT="test plugins python"
 
 REQUIRED_USE="python? ( mpi ${PYTHON_REQUIRED_USE} )
 	mysql? ( sqlite )
@@ -195,53 +195,51 @@ src_configure() {
 	# TODO: XDMF_USE_MYSQL?
 	# VTK_WRAP_JAVA
 	mycmakeargs+=(
-		$(usex development PARAVIEW_INSTALL_DEVELOPMENT_FILES)
-		$(uusex qt5 PARAVIEW_BUILD_QT_GUI)
-		$(usex qt5 "-DPARAVIEW_QT_VERSION=5" "")
-		$(usex qt5 Module_vtkGUISupportQtOpenGL)
-		$(usex qt5 Module_vtkGUISupportQtSQL)
-		$(usex qt5 Module_vtkGUISupportQtWebkit)
-		$(usex qt5 Module_vtkRenderingQt)
-		$(usex qt5 Module_vtkViewsQt)
-		$(usex qt5 VTK_Group_ParaViewQt)
-		$(usex qt5 VTK_Group_Qt)
-		$(usex !qt5 PQWIDGETS_DISABLE_QTWEBKIT)
-		$(usex boost Module_vtkInfovisBoost)
-		$(usex boost Module_vtkInfovisBoostGraphAlg)
-		$(usex mpi PARAVIEW_USE_MPI)
-		$(usex mpi PARAVIEW_USE_MPI_SSEND)
-		$(usex mpi PARAVIEW_USE_ICE_T)
-		$(usex mpi VTK_Group_MPI)
-		$(usex mpi VTK_XDMF_USE_MPI)
-		$(usex mpi XDMF_BUILD_MPI)
-		$(usex python PARAVIEW_ENABLE_PYTHON)
-		$(usex python VTK_Group_ParaViewPython)
-		$(usex python XDMF_WRAP_PYTHON)
-		$(usex python Module_vtkPython)
-		$(usex python Module_pqPython)
-		$(usex python Module_vtkWrappingPythonCore)
-		$(usex python Module_vtkPVPythonSupport)
-		$(usex python Module_AutobahnPython)
-		$(usex python Module_Twisted)
-		$(usex python Module_ZopeInterface)
-		$(usex python Module_vtkmpi4py)
-		$(usex qt5 "$(usex python Module_pqPython)" "-DModule_pqPython=OFF")
-		$(usex doc BUILD_DOCUMENTATION)
-		$(usex doc PARAVIEW_BUILD_WEB_DOCUMENTATION)
-		$(usex examples BUILD_EXAMPLES)
-		$(usex cg VTK_USE_CG_SHADERS)
-		$(usex mysql Module_vtkIOMySQL)
-		$(usex sqlite Module_vtksqlite)
-		$(usex coprocessing PARAVIEW_ENABLE_CATALYST)
-		$(usex ffmpeg PARAVIEW_ENABLE_FFMPEG)
-		$(usex ffmpeg VTK_USE_FFMPEG_ENCODER)
-		$(usex ffmpeg Module_vtkIOFFMPEG)
-		$(usex tk VTK_Group_Tk)
-		$(usex tk VTK_USE_TK)
-		$(usex tk Module_vtkRenderingTk)
-		$(usex tcl Module_vtkTclTk)
-		$(usex tcl Module_vtkWrappingTcl)
-		$(usex test BUILD_TESTING)
+		-DPARAVIEW_INSTALL_DEVELOPMENT_FILES=$(usex development)
+		-DPARAVIEW_BUILD_QT_GUI=$(usex qt5)
+		-DModule_vtkGUISupportQtOpenGL=$(usex qt5)
+		-DModule_vtkGUISupportQtSQL=$(usex qt5)
+		-DModule_vtkGUISupportQtWebkit=$(usex qt5)
+		-DModule_vtkRenderingQt=$(usex qt5)
+		-DModule_vtkViewsQt=$(usex qt5)
+		-DVTK_Group_ParaViewQt=$(usex qt5)
+		-DVTK_Group_Qt=$(usex qt5)
+		-DPQWIDGETS_DISABLE_QTWEBKIT=$(usex !qt5)
+		-DModule_vtkInfovisBoost=$(usex boost)
+		-DModule_vtkInfovisBoostGraphAlg=$(usex boost)
+		-DPARAVIEW_USE_MPI=$(usex mpi)
+		-DPARAVIEW_USE_MPI_SSEND=$(usex mpi)
+		-DPARAVIEW_USE_ICE_T=$(usex mpi)
+		-DVTK_Group_MPI=$(usex mpi)
+		-DVTK_XDMF_USE_MPI=$(usex mpi)
+		-DXDMF_BUILD_MPI=$(usex mpi)
+		-DPARAVIEW_ENABLE_PYTHON=$(usex python)
+		-DVTK_Group_ParaViewPython=$(usex python)
+		-DXDMF_WRAP_PYTHON=$(usex python)
+		-DModule_vtkPython=$(usex python)
+		-DModule_pqPython=$(usex python)
+		-DModule_vtkWrappingPythonCore=$(usex python)
+		-DModule_vtkPVPythonSupport=$(usex python)
+		-DModule_AutobahnPython=$(usex python)
+		-DModule_Twisted=$(usex python)
+		-DModule_ZopeInterface=$(usex python)
+		-DModule_vtkmpi4py=$(usex python)
+		-DBUILD_DOCUMENTATION=$(usex doc)
+		-DPARAVIEW_BUILD_WEB_DOCUMENTATION=$(usex doc)
+		-DBUILD_EXAMPLES=$(usex examples)
+		-DVTK_USE_CG_SHADERS=$(usex cg)
+		-DModule_vtkIOMySQL=$(usex mysql)
+		-DModule_vtksqlite=$(usex sqlite)
+		-DPARAVIEW_ENABLE_CATALYST=$(usex coprocessing)
+		-DPARAVIEW_ENABLE_FFMPEG=$(usex ffmpeg)
+		-DVTK_USE_FFMPEG_ENCODER=$(usex ffmpeg)
+		-DModule_vtkIOFFMPEG=$(usex ffmpeg)
+		-DVTK_Group_Tk=$(usex tk)
+		-DVTK_USE_TK=$(usex tk)
+		-DModule_vtkRenderingTk=$(usex tk)
+		-DModule_vtkTclTk=$(usex tcl)
+		-DModule_vtkWrappingTcl=$(usex tcl)
+		-DBUILD_TESTING=$(usex test)
 		)
 
 	if use openmp; then
@@ -249,46 +247,51 @@ src_configure() {
 	fi
 
 	if use qt5 ; then
-		mycmakeargs+=( -DVTK_INSTALL_QT_DIR=/${PVLIBDIR}/plugins/designer )
+		mycmakeargs+=(
+		    -DVTK_INSTALL_QT_DIR=/${PVLIBDIR}/plugins/designer
+            -DPARAVIEW_QT_VERSION=5
+		    -DModule_pqPython=$(usex python)
+	        )
 		if use python ; then
 			# paraview cannot guess sip directory properly
 			mycmakeargs+=( -DSIP_INCLUDE_DIR="${EPREFIX}$(python_get_includedir)" )
 		fi
+	else
+		mycmakeargs+=( -DModule_pqPython=OFF )
 	fi
 
 	# TODO: MantaView VaporPlugin VRPlugin
 	mycmakeargs+=(
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_AdiosReader)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_AnalyzeNIfTIIO)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_ArrowGlyph)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_EyeDomeLighting)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_ForceTime)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_GMVReader)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_H5PartReader)
-		$(usex plugins RAVIEW_BUILD_PLUGIN_MobileRemoteControl)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_Moments)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_NonOrthogonalSource)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_PacMan)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_PointSprite)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_PrismPlugin)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_QuadView)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_SLACTools)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_SciberQuestToolKit)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_SierraPlotTools)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_StreamingParticles)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_SurfaceLIC)
-		$(usex plugins PARAVIEW_BUILD_PLUGIN_UncertaintyRendering)
+		-DPARAVIEW_BUILD_PLUGIN_AdiosReader=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_AnalyzeNIfTIIO=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_ArrowGlyph=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_EyeDomeLighting=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_ForceTime=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_GMVReader=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_H5PartReader=$(usex plugins)
+		-DRAVIEW_BUILD_PLUGIN_MobileRemoteControl=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_Moments=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_NonOrthogonalSource=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_PacMan=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_PointSprite=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_PrismPlugin=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_QuadView=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_SLACTools=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_SciberQuestToolKit=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_SierraPlotTools=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_StreamingParticles=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_SurfaceLIC=$(usex plugins)
+		-DPARAVIEW_BUILD_PLUGIN_UncertaintyRendering=$(usex plugins)
 		# these are always needed for plugins
-		$(usex plugins Module_vtkFiltersFlowPaths)
-		$(usex plugins Module_vtkPVServerManagerApplication)
+		-DModule_vtkFiltersFlowPaths=$(usex plugins)
+		-DModule_vtkPVServerManagerApplication=$(usex plugins)
 		)
 
 	cmake-utils_src_configure
 }
 
 src_compile() {
-	# parallel compile seems broken
-	cmake-utils_src_compile -j1
+	cmake-utils_src_compile
 }
 
 src_install() {
