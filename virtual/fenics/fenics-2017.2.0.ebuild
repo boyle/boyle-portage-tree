@@ -6,7 +6,7 @@ EAPI=6
 DESCRIPTION="Virtual package for FEniCS Finite Element Software"
 
 PYTHON_COMPAT=( python3_{4,5,6} )
-inherit eutils cmake-utils python-single-r1
+inherit python-single-r1
 
 SLOT="0"
 KEYWORDS="~amd64"
@@ -20,7 +20,3 @@ RDEPEND="
 	paraview? ( sci-visualization/paraview )
 "
 DEPEND="${PYTHON_DEPS}"
-
-pkg_setup() {
-    python-single-r1_pkg_setup
-}
