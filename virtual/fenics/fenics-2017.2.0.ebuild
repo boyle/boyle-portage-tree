@@ -17,7 +17,7 @@ RDEPEND="
     ${PYTHON_DEPS}
 	=sci-mathematics/dolfin-${PV}
 	mshr? ( =dev-python/mshr-${PV}[${PYTHON_USEDEP}] )
-	paraview? ( sci-visualization/paraview[${PYTHON_USEDEP}] )
+	paraview? ( sci-visualization/paraview )
 "
 DEPEND="${PYTHON_DEPS}"
 
