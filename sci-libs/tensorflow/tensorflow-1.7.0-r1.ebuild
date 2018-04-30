@@ -84,11 +84,12 @@ src_compile() {
 		if use gcc4-abi; then
 			opt += " --cxxopt=\"-D_GLIBCXX_USE_CXX11_ABI=0\""
 		fi
-		bazel build --config=opt ${opt} //tensorflow/tools/pip_package:build_pip_package || die
+		local bazel_args = "--config=opt ${opt} //tensorflow/tools/pip_package:build_pip_package"
+		bazel build ${bazel_args} || die
 		bazel-bin/tensorflow/tools/pip_package/build_pip_package tensorflow_pkg || die
 		unzip -o -d tensorflow_pkg tensorflow_pkg/${P}-cp35-cp35m-linux_x86_64.whl || die
 		python_domodule tensorflow_pkg/${P}.data/purelib/tensorflow
-		bazel test || die
+		bazel test ${bazel_args} || die
 		bazel shutdown || die
 	}
 	python_foreach_impl python_compile
