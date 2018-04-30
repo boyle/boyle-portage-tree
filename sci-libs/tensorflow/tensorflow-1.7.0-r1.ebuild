@@ -14,7 +14,7 @@ SRC_URI="https://github.com/${PN}/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="Apache-2.0"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 IUSE="cuda mpi gcc4-abi"
 
 # TensorFlow 1.7 may be the last time we support Cuda versions below 8.0.
