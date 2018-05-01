@@ -73,6 +73,7 @@ src_configure(){
 }
 
 src_compile() {
+	addpredict /proc/self/setgroups
 	python_compile() {
 		# huh, by default tensorflow links static libs? See BUILD file
 		# set framework_shared_object=true somehow
