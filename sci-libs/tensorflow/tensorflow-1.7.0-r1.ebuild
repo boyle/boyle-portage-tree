@@ -73,7 +73,36 @@ src_configure(){
 }
 
 src_compile() {
-	addpredict /proc/self/setgroups
+#F: fopen_wr
+#S: deny
+#P: /proc/self/setgroups
+#A: /proc/self/setgroups
+#R: /proc/593/setgroups
+#C: init [3]                                                                                  
+#
+#F: fopen_wr
+#S: deny
+#P: /proc/self/setgroups
+#A: /proc/self/setgroups
+#R: /proc/595/setgroups
+#C: init [3]                                                                                  
+#
+#F: fopen_wr
+#S: deny
+#P: /proc/self/setgroups
+#A: /proc/self/setgroups
+#R: /proc/14725/setgroups
+#C: init [3]                                                                                  
+#
+#F: fopen_wr
+#S: deny
+#P: /proc/self/setgroups
+#A: /proc/self/setgroups
+#R: /proc/14729/setgroups
+#C: init [3]                                                                                  
+
+	addpredict /proc
+
 	python_compile() {
 		# huh, by default tensorflow links static libs? See BUILD file
 		# set framework_shared_object=true somehow
@@ -85,7 +114,10 @@ src_compile() {
 		if use gcc4-abi; then
 			opt += " --cxxopt=\"-D_GLIBCXX_USE_CXX11_ABI=0\""
 		fi
-		local bazel_args="--config=opt ${opt} //tensorflow/tools/pip_package:build_pip_package"
+		local bazel_args="--config=opt ${opt}"
+		bazel_args += " --verbose_failures --spawn_strategy=standalone --genrule_strategy=standalone"
+		bazel_args += " //tensorflow/tools/pip_package:build_pip_package"
+
 		bazel build ${bazel_args} || die
 		bazel-bin/tensorflow/tools/pip_package/build_pip_package tensorflow_pkg || die
 		unzip -o -d tensorflow_pkg tensorflow_pkg/${P}-cp35-cp35m-linux_x86_64.whl || die
