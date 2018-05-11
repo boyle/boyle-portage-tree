@@ -15,6 +15,6 @@ KEYWORDS="amd64 x86"
 IUSE=""
 
 S="${WORKDIR}/${PN}"
-FONT_SUFFIX="otf"
+FONT_SUFFIX="ttf"
 FONT_S="${S}/${FONT_SUFFIX}"
 #DOCS="LICENSE BaKoMa-CM.Fonts README.news"
