@@ -1,0 +1,72 @@
+#! /bin/bash -e
+
+VER=0.7.0
+parseargs() {
+  opts=$(getopt \
+     --longoptions "help,fullscreen,gpumon-terminal,width:,height:,test:,benchmark,print-score,submit-gpudb,username:,version" \
+     --name "$(basename $0)" \
+     --options "fw:h:t:bpsu:v" \
+     -- "$@" )
+  eval set --$opts
+
+  TEST="triangle (default)"
+  ARGS=""
+  while [[ $# -gt 0 ]]; do
+     case "$1" in
+        --help) help;;
+        -v | --version) echo "${VER}"; exit 0;;
+        -f | --fullscreen) ARGS+="/fullscreen ";;
+        --gpumon-terminal) ARGS+="/gpumon_terminal ";;
+        -w | --width) ARGS+="/width=${2} "; shift;;
+        -h | --height) ARGS+="/height=${2} "; shift;;
+        -t | --test) ARGS+="/test=${2} "; TEST="${2}"; shift;;
+        -b | --benchmark) ARGS+="/benchmark ";;
+        -p | --print-score) ARGS+="/print_score ";;
+        -s | --submit-gpudb) ARGS+="/submit_gpudb ";;
+        -u | --username) ARGS+="/user_screen_name=${2} "; shift;;
+        *) break;;
+     esac
+     shift
+  done
+}
+
+help() {
+   HELP=1
+   cat <<HELP
+gputest ${VER}
+  --help   This message
+  -v --version
+  --fullscreen
+  --gpumon-terminal # always passed by gui
+  -w --width=XRES
+  -h --height=YRES
+  -t --test=DEMO
+  -b --benchmark
+  -p --print-score # was used together with benchmark
+  -s --submit-gpudb
+  -u --username # name for submit?
+
+Demos:
+  fur
+  tess_x8
+  tess_x16
+  tess_x32
+  tess_x64
+  gi
+  pixmark_julia_fp32
+  pixmark_julia_fp64
+  pixmark_piano
+  pixmark_volplosion
+  plot3d
+  triangle (Default)
+HELP
+    exit 0
+}
+
+[ $# == 0 ] && echo "$(basename $0) ${VER} usage: $(basename $0) [options] --test=DEMO" && exit 1
+[ -n "$HELP" ] && help && exit 0
+
+parseargs "$@"
+
+cd /opt/gputest
+exec ./GpuTest "$ARGS"
