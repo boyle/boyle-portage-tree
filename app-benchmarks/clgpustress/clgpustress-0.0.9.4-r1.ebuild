@@ -12,7 +12,7 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
 
-DEPEND="media-libs/mesa[opencl] dev-libs/clhpp"
+DEPEND="virtual/opencl dev-libs/clhpp"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 IUSE="-gui"
