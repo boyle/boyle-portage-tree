@@ -14,8 +14,7 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
 
-DEPEND=">=sys-devel/llvm-6.0
-		<sys-devel/llvm-10.0
+DEPEND="<sys-devel/llvm-11.0
 		sys-devel/clang
 		sys-apps/hwloc"
 RDEPEND="${DEPEND}"
