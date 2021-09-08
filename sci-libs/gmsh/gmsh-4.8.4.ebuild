@@ -3,9 +3,9 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{7,8} )
+PYTHON_COMPAT=( python3_{7,8,9} )
 
-inherit cmake-utils flag-o-matic fortran-2 python-any-r1 toolchain-funcs
+inherit cmake flag-o-matic fortran-2 python-r1 toolchain-funcs
 
 DESCRIPTION="A three-dimensional finite element mesh generator"
 HOMEPAGE="http://www.geuz.org/gmsh/"
@@ -17,7 +17,9 @@ KEYWORDS="~amd64 ~x86"
 ## cgns is not compiling ATM, maybe fix cgns lib first
 IUSE="blas cgns examples jpeg med metis mpi netgen opencascade petsc png python X zlib"
 
-REQUIRED_USE="med? ( mpi )"
+REQUIRED_USE="
+	med? ( mpi )
+	${PYTHON_REQUIRED_USE}"
 
 RDEPEND="
 	virtual/fortran
@@ -30,10 +32,10 @@ RDEPEND="
 	png? ( media-libs/libpng:0 )
 	petsc? ( sci-mathematics/petsc )
 	zlib? ( sys-libs/zlib )
-	mpi? ( virtual/mpi[cxx] )"
+	mpi? ( virtual/mpi[cxx] )
+	${PYTHON_DEPS}"
 
 DEPEND="${RDEPEND}
-	${PYTHON_DEPS}
 	virtual/pkgconfig
 	python? ( dev-lang/swig:0 )
 	"
@@ -61,16 +63,31 @@ src_configure() {
 		-DENABLE_NETGEN="$(usex netgen)"
 		-DENABLE_OCC="$(usex opencascade)"
 		-DENABLE_PETSC="$(usex petsc)"
-		-DENABLE_WRAP_PYTHON="$(usex python)")
+		-DENABLE_WRAP_PYTHON="$(usex python)"
+		-DENABLE_BUILD_SHARED="yes")
 
-	cmake-utils_src_configure mycmakeargs
+	cmake_src_configure mycmakeargs
+}
+
+src_compile() {
+	cmake_src_compile
+
+	cd ${S}/utils/pypi/gmsh
+	python_foreach_impl run_in_build_dir default
+
+	cd ${S}/utils/pypi/gmsh-dev
+	python_foreach_impl run_in_build_dir default
 }
 
 src_install() {
-	cmake-utils_src_install
+	cmake_src_install
 
 	if use examples ; then
 		insinto /usr/share/doc/${PF}
 		doins -r demos tutorial
+	fi
+
+	if use python ; then
+		python_foreach_impl python_domodule "${S}/api/gmsh.py"
 	fi
 }
