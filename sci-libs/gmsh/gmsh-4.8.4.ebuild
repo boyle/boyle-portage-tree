@@ -28,7 +28,7 @@ RDEPEND="
 	cgns? ( sci-libs/cgnslib )
 	jpeg? ( virtual/jpeg:0 )
 	med? ( sci-libs/med[mpi] )
-	opencascade? ( sci-libs/opencascade:* )
+	opencascade? ( sci-libs/opencascade[tbb] )
 	png? ( media-libs/libpng:0 )
 	petsc? ( sci-mathematics/petsc )
 	zlib? ( sys-libs/zlib )
@@ -62,8 +62,11 @@ src_configure() {
 		-DENABLE_METIS="$(usex metis)"
 		-DENABLE_NETGEN="$(usex netgen)"
 		-DENABLE_OCC="$(usex opencascade)"
+		-DENABLE_OCC_CAF="$(usex opencascade)"
+		-DENABLE_OCC_TBB="$(usex opencascade)"
 		-DENABLE_PETSC="$(usex petsc)"
 		-DENABLE_WRAP_PYTHON="$(usex python)"
+		-DENABLE_OPENMP="yes"
 		-DENABLE_BUILD_SHARED="yes")
 
 	cmake_src_configure mycmakeargs
