@@ -69,6 +69,10 @@ src_configure() {
 		-DENABLE_OPENMP="yes"
 		-DENABLE_BUILD_SHARED="yes")
 
+	local occ_lib=$(dirname $(ldconfig -p |grep libTKCAF.so\$ | sed 's| /usr/||'| cut -f2 -d\>))
+	sed -i "s|\(find_library(OCC.*\)|\1 ${occ_lib}|" ${S}/CMakeLists.txt
+	sed -i "s|\(find_path(OCC.*\)|\1 ${occ_lib/$(get_libdir)/include}|" ${S}/CMakeLists.txt
+
 	cmake_src_configure mycmakeargs
 }
 
