@@ -12,9 +12,8 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
 DEPEND="
-	|| ( media-libs/mesa[opencl] dev-libs/amdgpu-pro-opencl )
-	dev-libs/clhpp
-	dev-util/opencl-headers
+	media-libs/mesa[opencl]
+	dev-cpp/clhpp
 "
 RDEPEND="${DEPEND}"
 BDEPEND=""

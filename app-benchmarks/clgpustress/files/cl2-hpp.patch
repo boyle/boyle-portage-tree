@@ -13,7 +13,7 @@
  #endif
  #include <popt.h>
 -#include <CL/cl.hpp>
-+#include <CL/cl2.hpp>
++#include <CL/opencl.hpp>
  #include "gpustress-core.h"
  
  #define PROGRAM_VERSION "0.0.9.4"
@@ -32,7 +32,7 @@
  #include <chrono>
  #include <atomic>
 -#include <CL/cl.hpp>
-+#include <CL/cl2.hpp>
++#include <CL/opencl.hpp>
  
  #ifdef _WINDOWS
  struct SteadyClock
@@ -51,7 +51,7 @@
  #include <atomic>
  #include <popt.h>
 -#include <CL/cl.hpp>
-+#include <CL/cl2.hpp>
++#include <CL/opencl.hpp>
  
  #include <FL/Fl.H>
  #include <FL/Fl_Box.H>
