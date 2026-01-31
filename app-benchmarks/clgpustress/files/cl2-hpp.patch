@@ -1,0 +1,64 @@
+--- a/gpustress-cli.cpp	2020-12-29 16:34:02.033988356 -0500
++++ b/gpustress-cli.cpp	2020-12-29 16:46:01.919801469 -0500
+@@ -16,6 +16,7 @@
+  *  with this program; if not, write to the Free Software Foundation, Inc.,
+  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+  */
++#include "config.h"
+ 
+ #define __CL_ENABLE_EXCEPTIONS 1
+ 
+@@ -35,7 +36,7 @@
+ #  include <csignal>
+ #endif
+ #include <popt.h>
+-#include <CL/cl.hpp>
++#include <CL/cl2.hpp>
+ #include "gpustress-core.h"
+ 
+ #define PROGRAM_VERSION "0.0.9.4"
+--- a/gpustress-core.h	2020-12-29 16:38:48.733318075 -0500
++++ b/gpustress-core.h	2020-12-29 16:39:01.226419137 -0500
+@@ -19,6 +19,7 @@
+ 
+ #ifndef __GPUSTRESS_CORE_H__
+ #define __GPUSTRESS_CORE_H__
++#include "config.h"
+ 
+ #include <ostream>
+ #include <algorithm>
+@@ -30,7 +31,7 @@
+ #include <random>
+ #include <chrono>
+ #include <atomic>
+-#include <CL/cl.hpp>
++#include <CL/cl2.hpp>
+ 
+ #ifdef _WINDOWS
+ struct SteadyClock
+--- a/gpustress-gui.cpp	2020-12-29 16:42:11.196951424 -0500
++++ b/gpustress-gui.cpp	2020-12-29 16:47:38.516572613 -0500
+@@ -16,6 +16,7 @@
+  *  with this program; if not, write to the Free Software Foundation, Inc.,
+  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+  */
++#include "config.h"
+ 
+ #define __CL_ENABLE_EXCEPTIONS 1
+ 
+@@ -49,7 +50,7 @@
+ #include <mutex>
+ #include <atomic>
+ #include <popt.h>
+-#include <CL/cl.hpp>
++#include <CL/cl2.hpp>
+ 
+ #include <FL/Fl.H>
+ #include <FL/Fl_Box.H>
+--- /dev/null	2020-12-29 16:49:44.901578646 -0500
++++ b/config.h	2020-12-29 16:41:50.952788538 -0500
+@@ -0,0 +1,4 @@
++#define CL_HPP_TARGET_OPENCL_VERSION 120
++#define CL_HPP_MINIMUM_OPENCL_VERSION 120
++#define CL_HPP_CL_1_2_DEFAULT_BUILD 1
++#define CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY 1
