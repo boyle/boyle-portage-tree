@@ -12,7 +12,10 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
 DEPEND="
-	media-libs/mesa[opencl]
+	|| (
+		media-libs/mesa[opencl]
+		dev-libs/rocm-opencl-runtime
+	)
 	dev-cpp/clhpp
 "
 RDEPEND="${DEPEND}"
