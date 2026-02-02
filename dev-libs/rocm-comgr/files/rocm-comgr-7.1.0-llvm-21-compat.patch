@@ -1,0 +1,111 @@
+--- a/src/comgr-compiler.cpp	2026-02-02 00:07:46.930819060 -0500
++++ b/src/comgr-compiler.cpp	2026-02-02 02:24:51.729149108 -0500
+@@ -69,6 +69,7 @@
+ #include "llvm/MC/MCAsmInfo.h"
+ #include "llvm/MC/MCCodeEmitter.h"
+ #include "llvm/MC/MCContext.h"
++#include "llvm/MC/MCInstPrinter.h"
+ #include "llvm/MC/MCInstrInfo.h"
+ #include "llvm/MC/MCObjectFileInfo.h"
+ #include "llvm/MC/MCObjectWriter.h"
+@@ -462,18 +463,19 @@
+ 
+   // FIXME: There is a bit of code duplication with addPassesToEmitFile.
+   if (Opts.OutputType == AssemblerInvocation::FT_Asm) {
+-    MCInstPrinter *IP = TheTarget->createMCInstPrinter(
+-        llvm::Triple(Opts.Triple), Opts.OutputAsmVariant, *MAI, *MCII, *MRI);
+-    std::unique_ptr<MCCodeEmitter> MCE;
+-    std::unique_ptr<MCAsmBackend> MAB;
+-    if (Opts.ShowEncoding) {
+-      MCE.reset(TheTarget->createMCCodeEmitter(*MCII, Ctx));
+-      MCTargetOptions Options;
+-      MAB.reset(TheTarget->createMCAsmBackend(*STI, *MRI, Options));
+-    }
++    std::unique_ptr<MCInstPrinter> IP(TheTarget->createMCInstPrinter(
++                llvm::Triple(Opts.Triple), Opts.OutputAsmVariant, *MAI, *MCII, *MRI));
++
++    std::unique_ptr<MCCodeEmitter> CE;
++    if (Opts.ShowEncoding)
++      CE.reset(TheTarget->createMCCodeEmitter(*MCII, Ctx));
++    MCTargetOptions Options;
++    std::unique_ptr<MCAsmBackend> MAB(
++        TheTarget->createMCAsmBackend(*STI, *MRI, Options));
++    
+     auto FOut = std::make_unique<formatted_raw_ostream>(*Out);
+-    Str.reset(TheTarget->createAsmStreamer(Ctx, std::move(FOut), IP,
+-                                           std::move(MCE), std::move(MAB)));
++    Str.reset(TheTarget->createAsmStreamer(Ctx, std::move(FOut), std::move(IP),
++                                           std::move(CE), std::move(MAB)));
+   } else if (Opts.OutputType == AssemblerInvocation::FT_Null) {
+     Str.reset(createNullStreamer(Ctx));
+   } else {
+@@ -484,14 +486,17 @@
+       Out = BOS.get();
+     }
+ 
+-    MCCodeEmitter *CE = TheTarget->createMCCodeEmitter(*MCII, Ctx);
++    std::unique_ptr<MCCodeEmitter> CE(
++        TheTarget->createMCCodeEmitter(*MCII, Ctx));
+     MCTargetOptions Options;
+-    MCAsmBackend *MAB = TheTarget->createMCAsmBackend(*STI, *MRI, Options);
++    std::unique_ptr<MCAsmBackend> MAB(
++        TheTarget->createMCAsmBackend(*STI, *MRI, Options));
++
++    std::unique_ptr<MCObjectWriter> OW(MAB->createObjectWriter(*Out));
++
+     Triple T(Opts.Triple);
+     Str.reset(TheTarget->createMCObjectStreamer(
+-        T, Ctx, std::unique_ptr<MCAsmBackend>(MAB),
+-        MAB->createObjectWriter(*Out), std::unique_ptr<MCCodeEmitter>(CE),
+-        *STI));
++        T, Ctx, std::move(MAB), std::move(OW), std::move(CE), *STI));
+     Str.get()->initSections(Opts.NoExecStack, *STI);
+   }
+ 
+@@ -653,9 +658,9 @@
+ amd_comgr_status_t executeCommand(const Command &Job, raw_ostream &LogS,
+                                   DiagnosticOptions &DiagOpts,
+                                   llvm::vfs::FileSystem &FS) {
+-  TextDiagnosticPrinter DiagClient(LogS, &DiagOpts);
++  TextDiagnosticPrinter DiagClient(LogS, DiagOpts);
+   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs);
+-  DiagnosticsEngine Diags(DiagID, &DiagOpts, &DiagClient, false);
++  DiagnosticsEngine Diags(DiagID, DiagOpts, &DiagClient, false);
+ 
+   auto Arguments = Job.getArguments();
+   SmallVector<const char *, 128> Argv;
+@@ -750,20 +755,20 @@
+   // here is mostly copy-and-pasted from driver.cpp/cc1_main.cpp/various Clang
+   // tests to try to approximate the same behavior as running the `clang`
+   // executable.
+-  IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts(new DiagnosticOptions);
++  DiagnosticOptions DiagOpts;
+   unsigned MissingArgIndex, MissingArgCount;
+   InputArgList ArgList = getDriverOptTable().ParseArgs(
+       Args.slice(1), MissingArgIndex, MissingArgCount);
+   // We ignore MissingArgCount and the return value of ParseDiagnosticArgs. Any
+   // errors that would be diagnosed here will also be diagnosed later, when the
+   // DiagnosticsEngine actually exists.
+-  (void)ParseDiagnosticArgs(*DiagOpts, ArgList);
++  (void)ParseDiagnosticArgs(DiagOpts, ArgList);
+   TextDiagnosticPrinter *DiagClient =
+-      new TextDiagnosticPrinter(LogS, &*DiagOpts);
++      new TextDiagnosticPrinter(LogS, DiagOpts);
+   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs);
+-  DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
++  DiagnosticsEngine Diags(DiagID, DiagOpts, DiagClient);
+ 
+-  ProcessWarningOptions(Diags, *DiagOpts, *OverlayFS, /*ReportDiags=*/false);
++  ProcessWarningOptions(Diags, DiagOpts, *OverlayFS, /*ReportDiags=*/false);
+ 
+   Driver TheDriver((Twine(env::getLLVMPath()) + "/bin/clang").str(),
+                    llvm::sys::getDefaultTargetTriple(), Diags,
+@@ -789,7 +794,7 @@
+ 
+   auto Cache = CommandCache::get(LogS);
+   for (auto &Job : C->getJobs()) {
+-    ClangCommand C(Job, *DiagOpts, *OverlayFS, executeCommand);
++    ClangCommand C(Job, DiagOpts, *OverlayFS, executeCommand);
+     if (Cache) {
+       if (auto Status = Cache->execute(C, LogS)) {
+         return Status;
