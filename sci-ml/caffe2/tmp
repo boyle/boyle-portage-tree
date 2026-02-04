@@ -1,0 +1,6 @@
+caffe2-2.5.1-newfix-functorch-install.patch
+caffe2-2.8.0-cmake.patch
+caffe2-2.8.0-gentoo.patch
+caffe2-2.9.0-gentoo.patch
+caffe2-2.9.1-CCCL31.patch
+composable-kernel-7fe50dc-expand-isa.patch
