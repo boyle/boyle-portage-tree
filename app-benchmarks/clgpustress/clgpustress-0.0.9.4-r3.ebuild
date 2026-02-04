@@ -15,6 +15,7 @@ DEPEND="
 	|| (
 		media-libs/mesa[opencl]
 		dev-libs/rocm-opencl-runtime
+		dev-libs/pocl
 	)
 	dev-cpp/clhpp
 "
