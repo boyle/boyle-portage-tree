@@ -29,10 +29,6 @@ DESCRIPTION="A deep learning framework"
 HOMEPAGE="https://pytorch.org/"
 SRC_URI="
 	https://github.com/pytorch/${MYPN}/archive/refs/tags/v${PV}.tar.gz -> ${MYP}.tar.gz
-	rocm? (
-		https://github.com/ROCm/composable_kernel/archive/${CK_COMMIT}.tar.gz
-		-> ${CK_P}.tar.gz
-	)
 	cuda? (
 		flash? ( ${FLASH_ATT_URI} )
 		memefficient? ( ${FLASH_ATT_URI} )
@@ -111,6 +107,7 @@ RDEPEND="
 		>=sci-libs/rocBLAS-6.3:=   <sci-libs/rocBLAS-7.2:=
 		>=sci-libs/rocRAND-6.3:=   <sci-libs/rocRAND-7.2:=
 		>=sci-libs/rocSOLVER-6.3:= <sci-libs/rocSOLVER-7.2:=
+	    >=sci-libs/composable-kernel-7.1:= <sci-libs/composable-kernel-7.2:=
 		memefficient? ( =sci-libs/aotriton-bin-0.11*:= )
 		distributed? ( >=dev-util/rocm-smi-6.3:= <dev-util/rocm-smi-7.2:= )
 	)
