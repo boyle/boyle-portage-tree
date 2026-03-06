@@ -12,7 +12,7 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64"
 
-RDEPEND=""
+RDEPEND="|| ( x11-misc/xclip x11-misc/xsel )"
 BDEPEND=""
 
 RESTRICT="strip"
