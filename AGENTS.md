@@ -175,7 +175,6 @@ ebuild ./pkg-1.0.ebuild test
 | Package | Issue | Fix |
 |---------|-------|-----|
 | gputest | Python 2.7 deprecated | Update to Python 3 |
-| obsidian | Unknown license | Add to /etc/portage/license/ |
 
 ### Cleanup Tasks
 
