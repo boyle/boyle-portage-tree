@@ -170,16 +170,34 @@ ebuild ./pkg-1.0.ebuild test
 | obsidian | Pending | Deb package |
 | ollama | Pending | Go + CUDA/ROCm |
 
+## QA Fixes Needed (from pkgcheck)
+
+### Errors to Fix
+
+| Package | Issue | Fix |
+|---------|-------|-----|
+| gputest | Python 2.7 deprecated | Update to Python 3 |
+| parsec | `RESTRICT="primaryuri"` non-standard | Change to `RESTRICT="fetch"` |
+| clgpustress | Bad filename in SRC_URI | Fix tarball naming |
+| obsidian | Unknown license | Add to /etc/portage/license/ |
+| parsec | Unknown license | Add to /etc/portage/license/ |
+
+### Cleanup Tasks
+
+- [ ] Remove old ebuild versions (opencode-bin-1.2.20, obsidian-1.6.5, yosys-0.61-r1, ollama-0.17.6)
+- [ ] Add `<remote-id type="github">` to all ebuilds (for GURU compatibility)
+- [ ] Remove empty `BDEPEND=""` and `IUSE=""` from binary/deb packages
+- [ ] Regenerate Manifests after cleanup: `ebuild *.ebuild manifest`
+
+### Optional Improvements
+
+- Add CI workflow for pkgcheck
+- Add `einstalldocs` to packages missing it (parsec, clgpustress, gputest)
+
 ## Reference Links
 
 - https://devmanual.gentoo.org/ebuild-writing/index.html
 - https://wiki.gentoo.org/wiki/Basic_guide_to_write_Gentoo_Ebuilds
 - https://wiki.gentoo.org/wiki/Writing_Rust_ebuilds
 - Skeleton ebuild: `/var/db/repos/gentoo/skel.ebuild`
-
-## Future Improvements
-
-1. Test remaining packages (see Testing Status above)
-2. Run pkgcheck QA scan
-3. Consider adding CI workflow for pkgcheck
-4. Keep KEYWORDS at ~amd64 until packages are stable
+- pkgcheck: `emerge --ask dev-util/pkgcheck`
