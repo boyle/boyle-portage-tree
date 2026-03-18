@@ -13,7 +13,6 @@ Gentoo overlay containing ebuilds for various tools.
 | opencode-bin | dev-util | Binary | AI coding agent |
 | obsidian | app-text | Deb | Markdown knowledge base |
 | ollama | sci-ml | Go | LLM runner |
-| parsec | games-util | Deb | Game streaming |
 | clgpustress | app-benchmarks | Makefile | OpenCL GPU stress test |
 | gputest | app-benchmarks | Binary | GPU benchmark |
 | ollama | acct-user | acct-user | Ollama service user |
@@ -161,8 +160,7 @@ ebuild ./pkg-1.0.ebuild test
 |---------|--------|-------|
 | svls | ✓ Tested | Built successfully, 337s |
 | viu | ✓ Tested | Built successfully, 69s |
-| parsec | Pending | Deb package |
-| clgpustress | Pending | Makefile build |
+| clgpustress | ✓ Tested | Built successfully, fixed SRC_URI |
 | gputest | Pending | Binary package |
 | yosys | Pending | Complex LLVM build |
 | verilator | Pending | Autotools build |
@@ -177,14 +175,11 @@ ebuild ./pkg-1.0.ebuild test
 | Package | Issue | Fix |
 |---------|-------|-----|
 | gputest | Python 2.7 deprecated | Update to Python 3 |
-| parsec | `RESTRICT="primaryuri"` non-standard | Change to `RESTRICT="fetch"` |
-| clgpustress | Bad filename in SRC_URI | Fix tarball naming |
 | obsidian | Unknown license | Add to /etc/portage/license/ |
-| parsec | Unknown license | Add to /etc/portage/license/ |
 
 ### Cleanup Tasks
 
-- [ ] Remove old ebuild versions (opencode-bin-1.2.20, obsidian-1.6.5, yosys-0.61-r1, ollama-0.17.6)
+- [x] Remove old ebuild versions (keep installed + newest only)
 - [ ] Add `<remote-id type="github">` to all ebuilds (for GURU compatibility)
 - [ ] Remove empty `BDEPEND=""` and `IUSE=""` from binary/deb packages
 - [ ] Regenerate Manifests after cleanup: `ebuild *.ebuild manifest`
@@ -192,7 +187,7 @@ ebuild ./pkg-1.0.ebuild test
 ### Optional Improvements
 
 - Add CI workflow for pkgcheck
-- Add `einstalldocs` to packages missing it (parsec, clgpustress, gputest)
+- Add `einstalldocs` to packages missing it (gputest)
 
 ## Reference Links
 

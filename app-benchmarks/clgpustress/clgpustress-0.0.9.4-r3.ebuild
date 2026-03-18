@@ -5,7 +5,9 @@ EAPI=8
 
 DESCRIPTION="Heavy OpenCL GPU stress tester"
 HOMEPAGE="http://clgpustress.nativeboinc.org"
-SRC_URI="https://github.com/matszpk/${PN}/archive/${PV}.tar.gz"
+SRC_URI="https://github.com/matszpk/${PN}/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
+
+S="${WORKDIR}/${PN}-${PV}"
 
 LICENSE="GPL-2"
 SLOT="0"
