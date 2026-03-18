@@ -4,18 +4,20 @@ Gentoo overlay containing ebuilds for various tools.
 
 ## Current Packages
 
-| Package | Category | Description |
-|---------|----------|-------------|
-| svls | sci-electronics | SystemVerilog language server |
-| viu | media-video | Terminal image viewer |
-| yosys | sci-electronics | Synthesizer |
-| verilator | sci-electronics | Verilog simulator |
-| opencode-bin | dev-util | OpenCode binary |
-| obsidian | app-text | Markdown editor |
-| ollama | sci-ml | LLM runner |
-| parsec | games-util | Gaming network tool |
-| clgpustress | app-benchmarks | GPU stress test |
-| gputest | app-benchmarks | GPU benchmark |
+| Package | Category | Type | Description |
+|---------|----------|------|-------------|
+| svls | sci-electronics | Cargo | SystemVerilog language server |
+| viu | media-video | Cargo | Terminal image viewer |
+| yosys | sci-electronics | Makefile | RTL synthesis framework |
+| verilator | sci-electronics | Autotools | Verilog/SystemVerilog simulator |
+| opencode-bin | dev-util | Binary | AI coding agent |
+| obsidian | app-text | Deb | Markdown knowledge base |
+| ollama | sci-ml | Go | LLM runner |
+| parsec | games-util | Deb | Game streaming |
+| clgpustress | app-benchmarks | Makefile | OpenCL GPU stress test |
+| gputest | app-benchmarks | Binary | GPU benchmark |
+| ollama | acct-user | acct-user | Ollama service user |
+| ollama | acct-group | acct-group | Ollama service group |
 
 ## Repository Structure
 
@@ -33,12 +35,11 @@ portage/
 
 ## Ebuild Development
 
-### Ebuild Template (Cargo/Rust packages)
+### Ebuild Types
+
+#### 1. Cargo/Rust Packages
 
 ```bash
-# Copyright 2026 Gentoo Authors
-# Distributed under the terms of the GNU General Public License v2
-
 EAPI=8
 
 CRATES="
@@ -69,12 +70,57 @@ src_install() {
 }
 ```
 
+#### 2. Binary Packages (prebuilt)
+
+```bash
+EAPI=8
+
+DESCRIPTION="Tool description"
+HOMEPAGE="https://example.com"
+SRC_URI="https://example.com/${P}.tar.gz -> ${P}.tar.gz"
+
+S="${WORKDIR}"
+LICENSE="MIT"
+SLOT="0"
+KEYWORDS="~amd64"
+
+RDEPEND="x11-misc/xclip"
+RESTRICT="strip"
+QA_PREBUILT="usr/bin/${PN}"
+
+src_install() {
+	dobin ${PN}
+}
+```
+
+#### 3. Deb Packages
+
+```bash
+EAPI=8
+inherit unpacker
+
+DESCRIPTION="Tool description"
+SRC_URI="https://example.com/${P}.deb"
+RESTRICT="primaryuri"
+
+src_unpack() {
+	unpack_deb ${A}
+}
+
+src_install() {
+	cp -R usr/ "${D}/" || die "Could not copy."
+}
+```
+
 ### Key Decisions
 
 #### RESTRICT="test"
 - Use for packages without tests (Gentoo-recommended)
 - Semantically means "this package has no tests"
 - Reference: https://devmanual.gentoo.org/ebuild-writing/functions/src_test/index.html
+
+#### RESTRICT="strip"
+- Use for prebuilt binaries that should not be stripped
 
 #### Category Selection
 - Use **existing Gentoo categories**
@@ -121,3 +167,4 @@ ebuild ./pkg-1.0.ebuild test
 1. Add more packages as needed
 2. Consider adding pkgcheck QA checks to CI
 3. Keep KEYWORDS at ~amd64 until packages are stable
+4. Update older ebuilds from EAPI=7 to EAPI=8
