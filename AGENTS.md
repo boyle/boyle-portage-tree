@@ -155,6 +155,21 @@ ebuild ./pkg-1.0.ebuild test
 - **Build tmpdir**: `/var/tmp/portage`
 - **Installed packages**: `/var/db/pkg`
 
+## Testing Status
+
+| Package | Status | Notes |
+|---------|--------|-------|
+| svls | ✓ Tested | Built successfully, 337s |
+| viu | ✓ Tested | Built successfully, 69s |
+| parsec | Pending | Deb package |
+| clgpustress | Pending | Makefile build |
+| gputest | Pending | Binary package |
+| yosys | Pending | Complex LLVM build |
+| verilator | Pending | Autotools build |
+| opencode-bin | Pending | Binary package |
+| obsidian | Pending | Deb package |
+| ollama | Pending | Go + CUDA/ROCm |
+
 ## Reference Links
 
 - https://devmanual.gentoo.org/ebuild-writing/index.html
@@ -164,7 +179,7 @@ ebuild ./pkg-1.0.ebuild test
 
 ## Future Improvements
 
-1. Add more packages as needed
-2. Consider adding pkgcheck QA checks to CI
-3. Keep KEYWORDS at ~amd64 until packages are stable
-4. Update older ebuilds from EAPI=7 to EAPI=8
+1. Test remaining packages (see Testing Status above)
+2. Run pkgcheck QA scan
+3. Consider adding CI workflow for pkgcheck
+4. Keep KEYWORDS at ~amd64 until packages are stable
