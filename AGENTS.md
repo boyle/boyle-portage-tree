@@ -85,7 +85,7 @@ inherit python-single-r1
 DEPEND="..."
 RDEPEND="... ${PYTHON_DEPS}"
 
-REQUIRED_USE="^^ ( ${PYTHON_REQUIRED_USE} )"
+REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 ```
 
 ### Patches
@@ -147,7 +147,6 @@ portage/
 | obsidian | MissingRemoteId, UnnecessaryManifest (old versions), UnknownLicense | Low |
 | ollama (sci-ml) | UnknownUseFlags (mkl, rocm), MatchingChksums, UnnecessaryManifest | Medium |
 | clgpustress | NonsolvableDepsInDev/Stable, BadFilename, UnnecessaryManifest | High |
-| gputest | NonsolvableDepsInDev/Stable, UnquotedVariables, MissingUseDepDefault | High |
 | svls, viu, verilator, yosys | MissingRemoteId, UnnecessaryManifest | Low |
 | games-util/parsec | VariableOrderWrong, UnknownRestrict, NonsolvableDepsInDev | Medium |
 | acct-group/ollama, acct-user/ollama | PotentialStable | Low |

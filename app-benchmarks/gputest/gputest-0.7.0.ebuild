@@ -21,8 +21,7 @@ PATCHES=( "${FILESDIR}/gputest-0.7.0-python3.patch" )
 
 DOCS="README.txt EULA.txt"
 RESTRICT="splitdebug"
-
-REQUIRED_USE="^^ ( ${PYTHON_REQUIRED_USE} )"
+REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
 src_unpack() {
 	default
@@ -34,7 +33,7 @@ src_prepare() {
 	chmod +x gputest_gui.py
 	rm data/.DS_Store
 	for so in *.so; do
-		patchelf --set-rpath '$ORIGIN' $so
+		patchelf --set-rpath '$ORIGIN' "${so}"
 	done
 	default
 }
@@ -47,7 +46,7 @@ src_install() {
 
 	insinto /opt/gputest
 	for so in *.so; do
-		doins ${so}
+		doins "${so}"
 	done
 	doins -r data
 	exeinto /opt/gputest
