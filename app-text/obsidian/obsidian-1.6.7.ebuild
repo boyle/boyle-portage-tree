@@ -39,7 +39,6 @@ DEPEND="app-accessibility/at-spi2-core:2
 "
 RDEPEND="${DEPEND}"
 
-
 src_prepare() {
 	default
 

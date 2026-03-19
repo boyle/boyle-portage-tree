@@ -143,18 +143,18 @@ portage/
 
 | Package | Issue | Priority |
 |---------|-------|----------|
-| opencode-bin | RedundantVersion (1.2.20 overshadowed by 1.2.26) | Medium |
-| obsidian | DoubleEmptyLine (line 42) | Low |
-| ollama | UnknownUseFlags (mkl, rocm) | Medium |
-| acct-group/ollama | UnnecessaryManifest, PotentialStable | Low |
-| acct-user/ollama | UnnecessaryManifest, PotentialStable | Low |
-| clgpustress | NonsolvableDepsInDev/Stable (x86 deps issue) | High |
-| repo | UnusedEclasses (alternatives-2, npmv1, numeric) | Low |
-| eclass | Doc errors in custom eclasses | Low |
+| opencode-bin | RedundantVersion, EmptyGlobalAssignment, MissingRemoteId | Medium |
+| obsidian | MissingRemoteId, UnnecessaryManifest (old versions), UnknownLicense | Low |
+| ollama (sci-ml) | UnknownUseFlags (mkl, rocm), MatchingChksums, UnnecessaryManifest | Medium |
+| clgpustress | NonsolvableDepsInDev/Stable, BadFilename, UnnecessaryManifest | High |
+| gputest | NonsolvableDepsInDev/Stable, UnquotedVariables, MissingUseDepDefault | High |
+| svls, viu, verilator, yosys | MissingRemoteId, UnnecessaryManifest | Low |
+| games-util/parsec | VariableOrderWrong, UnknownRestrict, NonsolvableDepsInDev | Medium |
+| acct-group/ollama, acct-user/ollama | PotentialStable | Low |
 
 ### Version Updates Needed
 
 | Package | Current | Latest |
 |---------|---------|--------|
 | opencode-bin | 1.2.26 | Check GitHub |
-| ollama | 0.17.7 | Check GitHub |
+| ollama (sci-ml) | 0.17.7 | Check GitHub |
