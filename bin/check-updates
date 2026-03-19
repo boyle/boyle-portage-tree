@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -euo pipefail
+
+PACKAGES=(
+    "ollama:sci-ml/ollama"
+    "opencode-bin:dev-util/opencode-bin"
+    "svls:sci-electronics/svls"
+)
+
+check_pkg() {
+    local display="$1"
+    local cat_pkg="$2"
+    local category="${cat_pkg%/*}"
+    local pkg="${cat_pkg#*/}"
+
+    local github_repo
+    case "$pkg" in
+    pv_ebuild=$(ls "${PORTDIR_OVERLAY}/${category}/${pkg}/"${pkg}-*.ebuild 2>/dev/null | grep -v '9999' | sort -V | tail -1 | sed 's/.*-\([0-9]*\.[0-9]*\.[0-9]*\)\.ebuild/\1/')
+    pv_installed=$(equery list "$pkg" 2>/dev/null | head -1 | sed 's/.*-\([0-9]*\.[0-9]*\.[0-9]*\)/\1/')
+
+    echo -n "${display}: ${pv_new} "
+    if [[ "$pv_new" != "$pv_ebuild" ]]; then
+        if [[ -n "$pv_installed" && "$pv_installed" != "$pv_new" ]]; then
+            echo "(${pv_installed}, installed)"
+        else
+            echo "(${pv_ebuild})"
+        fi
+    else
+        if [[ -n "$pv_installed" && "$pv_installed" != "$pv_new" ]]; then
+            echo "(${pv_installed}, installed)"
+        else
+            echo "(up to date)"
+        fi
+    fi
+}
+
+for entry in "${PACKAGES[@]}"; do
+    display="${entry%:*}"
+    cat_pkg="${entry#*:}"
+    check_pkg "$display" "$cat_pkg"
+done

@@ -180,3 +180,32 @@ All packages have been tested with `ebuild` (unpack/prepare/compile) and are wor
 |---------|---------|--------|
 | opencode-bin | 1.2.26 | Check GitHub |
 | ollama (sci-ml) | 0.17.7 | Check GitHub |
+
+## Improve check-updates
+
+### Final Implementation Plan
+
+1. Add sleep 2 to avoid rate limiting during development
+2. Parse metadata.xml for GitHub remote-id using xmllint (with grep fallback)
+3. Rename variables to ebuild semantics:
+   - PV_UPSTREAM (upstream version)
+   - PV_EBUILD (version in ebuild)
+   - PV (installed version)
+   - PN (package name)
+   - CATEGORY_PN (category/package path)
+   - EGIT_REPO_URI (GitHub repo URL)
+4. Simplify equery: `equery list -F '$version' "$PN" 2>/dev/null || echo ""`
+5. Simplify output logic with `continue` statements to reduce nesting
+6. Test after each implementation step
+7. Auto-discover packages by scanning entire overlay:
+   - Skip acct-user/* and acct-group/* (system packages)
+   - For each ebuild, parse metadata.xml for GitHub remote-id
+   - If no GitHub remote-id, show "(non-github source)"
+8. Remove sleep 2 as final step after testing
+
+### Expected Output Format
+```
+ollama: 0.18.2 (0.17.7, installed)
+opencode-bin: 1.2.27 (1.2.20, installed)
+svls: 0.2.14 (up to date)
+```
