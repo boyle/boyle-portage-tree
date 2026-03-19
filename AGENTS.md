@@ -143,14 +143,14 @@ portage/
 
 | Package | Issue | Priority |
 |---------|-------|----------|
-| obsidian | MissingRemoteId, DoubleEmptyLine | Medium |
-| opencode-bin | MissingRemoteId, RedundantVersion (1.2.20 overshadowed) | Medium |
-| svls | MissingRemoteId | Low |
-| viu | MissingRemoteId | Low |
-| ollama (acct-*) | UnnecessaryManifest, PotentialStable | Low |
-| yosys | MissingRemoteId | Low |
-| verilator | MissingRemoteId | Low |
-| games-util/parsec | (removed - Manifest only, no ebuild) | - |
+| opencode-bin | RedundantVersion (1.2.20 overshadowed by 1.2.26) | Medium |
+| obsidian | DoubleEmptyLine (line 42) | Low |
+| ollama | UnknownUseFlags (mkl, rocm) | Medium |
+| acct-group/ollama | UnnecessaryManifest, PotentialStable | Low |
+| acct-user/ollama | UnnecessaryManifest, PotentialStable | Low |
+| clgpustress | NonsolvableDepsInDev/Stable (x86 deps issue) | High |
+| repo | UnusedEclasses (alternatives-2, npmv1, numeric) | Low |
+| eclass | Doc errors in custom eclasses | Low |
 
 ### Version Updates Needed
 
