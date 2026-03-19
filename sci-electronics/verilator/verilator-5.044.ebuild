@@ -23,7 +23,7 @@ fi
 
 LICENSE="|| ( Artistic-2 LGPL-3 )"
 SLOT="0"
-IUSE="debug test"
+IUSE="test"
 RESTRICT="!test? ( test )"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
@@ -46,24 +46,16 @@ BDEPEND="
 	)
 "
 
-src_prepare() {
-	default
-	if [[ ! "${PV}" == "9999" ]] ; then
-		# https://github.com/verilator/verilator/issues/3352
-		sed -i "s/UNKNOWN_REV/(Gentoo ${PVR})/g" "${S}"/src/config_rev || die
-	fi
-	# https://bugs.gentoo.org/785151
-	sed -i "s/python3/${EPYTHON}/g" "${S}"/configure.ac || die
-	find . -name "Makefile" -exec sed -i "s/python3/${EPYTHON}/g" {} + || die
-	find test_regress -type f -exec sed -i "s/python3/${EPYTHON}/g" {} + || die
-	python_fix_shebang .
-	# https://bugs.gentoo.org/887917
-	if ! use debug; then
-		sed -i '/AC_SUBST(CFG_CXXFLAGS_DEBUG)/i CFG_CXXFLAGS_DEBUG=""' "${S}"/configure.ac || die
-		sed -i '/AC_SUBST(CFG_LDFLAGS_DEBUG)/i CFG_LDFLAGS_DEBUG=""' "${S}"/configure.ac || die
-	fi
-	eautoconf --force
-}
+	src_prepare() {
+		default
+		if [[ ! "${PV}" == "9999" ]] ; then
+			# https://github.com/verilator/verilator/issues/3352
+			sed -i "s/UNKNOWN_REV/(Gentoo ${PVR})/g" "${S}"/src/config_rev || die
+		fi
+		# Replace hardcoded python3.13 with ${EPYTHON} for PYTHON_COMPAT support
+		sed -i "s/python3\.13/${EPYTHON}/g" "${S}"/configure.ac || die
+		eautoconf --force
+	}
 
 src_configure() {
 	# https://bugs.gentoo.org/887919

@@ -137,6 +137,31 @@ portage/
 - https://wiki.gentoo.org/wiki/Writing_Rust_ebuilds
 - Skeleton ebuild: `/var/db/repos/gentoo/skel.ebuild`
 
+## Tested Packages
+
+All packages have been tested with `ebuild` (unpack/prepare/compile) and are working.
+
+| Package | Notes |
+|---------|-------|
+| gputest | Binary package; install fails as non-root (expected) |
+| obsidian | Binary .deb package |
+| svls | Cargo build (~4m) |
+| opencode-bin | Binary package; install fails as non-root (expected) |
+| ollama (sci-ml) | Large Go/C++ project; build takes 10-30+ minutes |
+| acct-group/ollama | acct-group eclass |
+| acct-user/ollama | acct-user eclass |
+| yosys | Large C++ project; build takes 10-30+ minutes |
+| verilator | C++ with autotools; tested 2026-03-18 |
+| clgpustress | Makefile build |
+| viu | Cargo build (~2m) |
+
+### Known Issues
+
+- **verilator**: Debug flags (`-Og -ggdb -gz`) are unconditionally compiled via `CFG_CXXFLAGS_DBG`. Bug 887917 sed was broken (wrong variable names). Not critical - PORTAGE_STRIP handles stripping.
+- **yosys**: gcc-15 warnings (`Wmaybe-uninitialized`, `Warray-bounds`) in upstream code.
+- **clgpustress**: Hardcoded OpenCL include path in Makefile (`/home/mat/docs/...`).
+- **gputest**: Patch warning "patch unexpectedly ends in middle of line" (minor fuzz, still applies).
+
 ## Pending Work
 
 ### pkgcheck Issues (from `pkgcheck scan`)
