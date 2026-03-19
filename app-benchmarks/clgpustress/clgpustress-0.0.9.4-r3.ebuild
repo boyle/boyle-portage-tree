@@ -1,6 +1,8 @@
 # Copyright 2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
+# <remote-id type="github">matszpk/nativeboinc</remote-id>
+
 EAPI=8
 
 DESCRIPTION="Heavy OpenCL GPU stress tester"
@@ -22,8 +24,6 @@ DEPEND="
 	dev-cpp/clhpp
 "
 RDEPEND="${DEPEND}"
-BDEPEND=""
-IUSE=""
 
 PATCHES=("${FILESDIR}/cl2-hpp.patch")
 

@@ -176,17 +176,9 @@ ebuild ./pkg-1.0.ebuild test
 |---------|-------|-----|
 | gputest | Python 2.7 deprecated | Update to Python 3 |
 
-### Cleanup Tasks
-
-- [x] Remove old ebuild versions (keep installed + newest only)
-- [ ] Add `<remote-id type="github">` to all ebuilds (for GURU compatibility)
-- [ ] Remove empty `BDEPEND=""` and `IUSE=""` from binary/deb packages
-- [ ] Regenerate Manifests after cleanup: `ebuild *.ebuild manifest`
-
 ### Optional Improvements
 
 - Add CI workflow for pkgcheck
-- Add `einstalldocs` to packages missing it (gputest)
 
 ## Reference Links
 

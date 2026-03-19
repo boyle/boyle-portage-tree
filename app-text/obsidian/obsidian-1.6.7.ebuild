@@ -1,6 +1,8 @@
 # Copyright 2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
+# <remote-id type="github">obsidianmd/obsidian-releases</remote-id>
+
 EAPI=8
 inherit desktop unpacker xdg
 
@@ -38,7 +40,6 @@ DEPEND="app-accessibility/at-spi2-core:2
 	x11-libs/pango
 "
 RDEPEND="${DEPEND}"
-BDEPEND=""
 
 
 src_prepare() {

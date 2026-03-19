@@ -10,11 +10,9 @@ SRC_URI="http://www.ozone3d.net/gputest/dl/GpuTest_Linux_x64_${PV}.zip"
 LICENSE="all-rights-reserved"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE=""
 
 DEPEND="app-arch/unzip dev-lang/python:2.7[tk]"
 RDEPEND="${DEPEND}"
-BDEPEND=""
 
 DOCS="README.txt EULA.txt"
 RESTRICT="splitdebug"
@@ -37,8 +35,9 @@ src_prepare() {
 	default
 }
 
-src_install() {
-	default
+	src_install() {
+		einstalldocs
+		default
 	dobin ${FILESDIR}/gputest
 	newbin gputest_gui.py gputest-gui
 

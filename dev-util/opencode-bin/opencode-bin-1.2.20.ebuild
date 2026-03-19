@@ -1,6 +1,8 @@
 # Copyright 2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
+# <remote-id type="github">anomalyco/opencode</remote-id>
+
 EAPI=8
 
 DESCRIPTION="The open source AI coding agent"
@@ -13,7 +15,6 @@ SLOT="0"
 KEYWORDS="~amd64"
 
 RDEPEND="|| ( x11-misc/xclip x11-misc/xsel )"
-BDEPEND=""
 
 RESTRICT="strip"
 QA_PREBUILT="usr/bin/opencode"

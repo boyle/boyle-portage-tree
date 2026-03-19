@@ -1,6 +1,8 @@
 # Copyright 2024-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
+# <remote-id type="github">ollama/ollama</remote-id>
+
 EAPI=8
 
 # supports ROCM/HIP >=5.5, but we define 6.1 due to the eclass
