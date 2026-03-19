@@ -18,6 +18,103 @@ Gentoo overlay containing ebuilds for various tools.
 | ollama | acct-user | acct-user | Ollama service user |
 | ollama | acct-group | acct-group | Ollama service group |
 
+## Build/Lint/Test Commands
+
+### Running pkgcheck (QA)
+
+```bash
+# Scan entire overlay
+PORTDIR_OVERLAY=/home/boyle/proj/portage pkgcheck scan
+
+# Scan specific package
+PORTDIR_OVERLAY=/home/boyle/proj/portage pkgcheck scan app-benchmarks/gputest
+```
+
+### Building packages
+
+```bash
+export PORTDIR_OVERLAY=/home/boyle/proj/portage
+
+# Generate manifest (checksums)
+ebuild ./pkg-1.0.ebuild manifest
+
+# Full build cycle
+ebuild ./pkg-1.0.ebuild clean unpack compile install
+
+# Build from clean (removes work dir first)
+ebuild ./pkg-1.0.ebuild clean && ebuild ./pkg-1.0.ebuild unpack prepare compile
+
+# Individual phases
+ebuild ./pkg-1.0.ebuild unpack   # Extract source
+ebuild ./pkg-1.0.ebuild prepare  # Apply patches, run src_prepare
+ebuild ./pkg-1.0.ebuild compile  # Build (usually no-op for binary)
+ebuild ./pkg-1.0.ebuild install  # Install to staging dir
+```
+
+## Code Style Guidelines
+
+### Ebuild Structure
+
+- **EAPI**: Use `EAPI=8` (current stable)
+- **Quotes**: Always quote variables: `"${S}"` not `${S}`
+- **Newline**: End file with trailing newline
+- **Executable**: Never set executable bit on `files/*` helpers
+
+### Variables
+
+```bash
+# Good
+S="${WORKDIR}/package-${PV}"
+DOCS="README.md CHANGELOG.md"
+
+# Avoid
+S=${WORKDIR}/package-${PV}   # Unquoted
+```
+
+### Python Packages
+
+- Use `python-single-r1` for packages that need Python runtime
+- Use `python-any-r1` for packages that only build with Python
+- Set `PYTHON_COMPAT=( python3_{10..14} )` or current supported versions
+- Add `${PYTHON_DEPS}` to RDEPEND for runtime deps
+
+```bash
+PYTHON_COMPAT=( python3_{10..14} )
+inherit python-single-r1
+
+DEPEND="..."
+RDEPEND="... ${PYTHON_DEPS}"
+
+REQUIRED_USE="^^ ( ${PYTHON_REQUIRED_USE} )"
+```
+
+### Patches
+
+- Place patches in `files/` directory
+- Use `PATCHES` array to apply automatically:
+
+```bash
+PATCHES=( "${FILESDIR}/fix-build.patch" )
+```
+
+### RESTRICT Flags
+
+- `RESTRICT="test"` - Package has no tests
+- `RESTRICT="strip"` - Prebuilt binary (don't strip)
+- `RESTRICT="primaryuri"` - Only fetch from SRC_URI (for .deb files)
+
+### Common Issues to Avoid
+
+1. **Missing Python eclass**: Don't use raw `dev-lang/python:3.x`, use eclass
+2. **Unquoted variables**: Always quote `${S}`, `${FILESDIR}`, `${D}`
+3. **Executable files**: `files/` helpers should not be executable
+4. **Duplicate class definitions**: Check patched Python scripts for dupes
+
+### Category Selection
+
+- Use existing Gentoo categories from `/var/db/repos/gentoo/profiles/categories`
+- Common: `dev-lang`, `media-video`, `dev-util`, `sci-electronics`, `app-benchmarks`
+
 ## Repository Structure
 
 ```
@@ -30,155 +127,8 @@ portage/
 │   └── package/
 │       ├── Manifest   # checksums (auto-generated)
 │       └── package-version.ebuild
+└── files/             # Patches and helper scripts
 ```
-
-## Ebuild Development
-
-### Ebuild Types
-
-#### 1. Cargo/Rust Packages
-
-```bash
-EAPI=8
-
-CRATES="
-	crate1@1.0.0
-	crate2@2.0.0
-"
-
-inherit cargo
-
-DESCRIPTION="Tool description"
-HOMEPAGE="https://github.com/user/repo"
-SRC_URI="
-	https://github.com/user/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
-	${CARGO_CRATE_URIS}
-"
-
-LICENSE="MIT"
-SLOT="0"
-KEYWORDS="~amd64"
-
-RESTRICT="test"
-
-QA_FLAGS_IGNORED="/usr/bin/${PN}"
-
-src_install() {
-	cargo_src_install
-	einstalldocs
-}
-```
-
-#### 2. Binary Packages (prebuilt)
-
-```bash
-EAPI=8
-
-DESCRIPTION="Tool description"
-HOMEPAGE="https://example.com"
-SRC_URI="https://example.com/${P}.tar.gz -> ${P}.tar.gz"
-
-S="${WORKDIR}"
-LICENSE="MIT"
-SLOT="0"
-KEYWORDS="~amd64"
-
-RDEPEND="x11-misc/xclip"
-RESTRICT="strip"
-QA_PREBUILT="usr/bin/${PN}"
-
-src_install() {
-	dobin ${PN}
-}
-```
-
-#### 3. Deb Packages
-
-```bash
-EAPI=8
-inherit unpacker
-
-DESCRIPTION="Tool description"
-SRC_URI="https://example.com/${P}.deb"
-RESTRICT="primaryuri"
-
-src_unpack() {
-	unpack_deb ${A}
-}
-
-src_install() {
-	cp -R usr/ "${D}/" || die "Could not copy."
-}
-```
-
-### Key Decisions
-
-#### RESTRICT="test"
-- Use for packages without tests (Gentoo-recommended)
-- Semantically means "this package has no tests"
-- Reference: https://devmanual.gentoo.org/ebuild-writing/functions/src_test/index.html
-
-#### RESTRICT="strip"
-- Use for prebuilt binaries that should not be stripped
-
-#### Category Selection
-- Use **existing Gentoo categories**
-- Check `/var/db/repos/gentoo/profiles/categories`
-- Common: `dev-lang`, `media-video`, `dev-util`, `sci-electronics`
-
-#### Getting CRATES List
-1. Download source and Cargo.lock from GitHub release
-2. Extract crate names and versions from Cargo.lock
-3. Format as `name@version` one per line
-
-### Ebuild Commands
-
-```bash
-# Set PORTDIR_OVERLAY to use this overlay
-export PORTDIR_OVERLAY=~/proj/portage
-
-# Generate manifest (creates checksums)
-ebuild ./pkg-1.0.ebuild manifest
-
-# Full build cycle
-ebuild ./pkg-1.0.ebuild clean unpack compile install
-
-# Test (if not restricted)
-ebuild ./pkg-1.0.ebuild test
-```
-
-### Key Gentoo Paths
-
-- **Portage tree**: `/var/db/repos/gentoo`
-- **Distfiles**: `/var/cache/distfiles`
-- **Build tmpdir**: `/var/tmp/portage`
-- **Installed packages**: `/var/db/pkg`
-
-## Testing Status
-
-| Package | Status | Notes |
-|---------|--------|-------|
-| svls | ✓ Tested | Built successfully, 337s |
-| viu | ✓ Tested | Built successfully, 69s |
-| clgpustress | ✓ Tested | Built successfully, fixed SRC_URI |
-| gputest | Pending | Binary package |
-| yosys | Pending | Complex LLVM build |
-| verilator | Pending | Autotools build |
-| opencode-bin | Pending | Binary package |
-| obsidian | Pending | Deb package |
-| ollama | Pending | Go + CUDA/ROCm |
-
-## QA Fixes Needed (from pkgcheck)
-
-### Errors to Fix
-
-| Package | Issue | Fix |
-|---------|-------|-----|
-| gputest | Python 2.7 deprecated | Update to Python 3 |
-
-### Optional Improvements
-
-- Add CI workflow for pkgcheck
 
 ## Reference Links
 
@@ -186,4 +136,25 @@ ebuild ./pkg-1.0.ebuild test
 - https://wiki.gentoo.org/wiki/Basic_guide_to_write_Gentoo_Ebuilds
 - https://wiki.gentoo.org/wiki/Writing_Rust_ebuilds
 - Skeleton ebuild: `/var/db/repos/gentoo/skel.ebuild`
-- pkgcheck: `emerge --ask dev-util/pkgcheck`
+
+## Pending Work
+
+### pkgcheck Issues (from `pkgcheck scan`)
+
+| Package | Issue | Priority |
+|---------|-------|----------|
+| obsidian | MissingRemoteId, DoubleEmptyLine | Medium |
+| opencode-bin | MissingRemoteId, RedundantVersion (1.2.20 overshadowed) | Medium |
+| svls | MissingRemoteId | Low |
+| viu | MissingRemoteId | Low |
+| ollama (acct-*) | UnnecessaryManifest, PotentialStable | Low |
+| yosys | MissingRemoteId | Low |
+| verilator | MissingRemoteId | Low |
+| games-util/parsec | (removed - Manifest only, no ebuild) | - |
+
+### Version Updates Needed
+
+| Package | Current | Latest |
+|---------|---------|--------|
+| opencode-bin | 1.2.26 | Check GitHub |
+| ollama | 0.17.7 | Check GitHub |
