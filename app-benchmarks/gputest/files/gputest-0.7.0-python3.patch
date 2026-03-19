@@ -1,0 +1,42 @@
+--- a/gputest_gui.py
++++ b/gputest_gui.py
+@@ -5,9 +5,10 @@
+ # Do no hesitate to improve this GUI if you have time ;)
+ #
+ 
+-import os
++#!/usr/bin/python3
++import os, sys
+ #from subprocess import call
+-import Tkinter as tk
++import tkinter as tk
+ 
+ 
+ root = tk.Tk()
+@@ -57,7 +58,7 @@ def prepare_command_line():
+   if cs:
+     index = cs[0]
+     seltext = listbox1.get(index)
+   else:
+-    print "\nPlease select a test (FurMark is the default test)."
++    print("\nPlease select a test (FurMark is the default test).")
+     index = 0
+     seltext = listbox1.get(index)
+   
+@@ -88,13 +89,6 @@ def run_benchmark():
+   os.system(g_command_line)
+   
+ class cDemo():
+   def __init__(self, demo_name="", description="", demo_url="", demo_code=""):
+       self.demo_name = demo_name;
+       self.description = description;
+       self.demo_url = demo_url;
+       self.demo_code = demo_code;
+-
+-
+-class cDemo():
+-  def __init__(self, demo_name="", description="", demo_url="", demo_code=""):
+-      self.demo_name = demo_name;
+-      self.description = description;
+-      self.demo_url = demo_url;
+-      self.demo_code = demo_code;
