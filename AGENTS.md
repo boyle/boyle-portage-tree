@@ -168,12 +168,10 @@ All packages have been tested with `ebuild` (unpack/prepare/compile) and are wor
 
 | Package | Issue | Priority |
 |---------|-------|----------|
-| opencode-bin | RedundantVersion, EmptyGlobalAssignment, MissingRemoteId | Medium |
+| opencode-bin | RedundantVersion (old 1.2.20), EmptyGlobalAssignment, MissingRemoteId | Medium |
 | obsidian | MissingRemoteId, UnnecessaryManifest (old versions), UnknownLicense | Low |
 | ollama (sci-ml) | UnknownUseFlags (mkl, rocm), MatchingChksums, UnnecessaryManifest | Medium |
 | clgpustress | NonsolvableDepsInDev/Stable, BadFilename, UnnecessaryManifest | High |
-| svls, viu, verilator, yosys | MissingRemoteId, UnnecessaryManifest | Low |
-| games-util/parsec | VariableOrderWrong, UnknownRestrict, NonsolvableDepsInDev | Medium |
 | acct-group/ollama, acct-user/ollama | PotentialStable | Low |
 
 ### Version Updates Needed
