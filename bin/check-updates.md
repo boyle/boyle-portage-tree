@@ -79,20 +79,16 @@ Optional version info is only shown when it differs from upstream.
 
 #### Icon Logic
 
-Icons are determined by comparing upstream, ebuild, and installed versions:
+Icons are determined by comparing upstream, ebuild, and installed versions. Priority determines which icon is shown when multiple conditions apply.
 
-| Icon | Condition | Rationale |
-|------|-----------|-----------|
-| (blank) | upstream = installed = ebuild | Everything in sync |
-| `↑` | ebuild = upstream > installed | Matching ebuild exists; just update installed |
-| `+` | upstream > ebuild | Ebuild needs updating before install |
-| `o` | installed = none AND upstream = ebuild | Ready to install |
-| `+` | installed = none AND upstream > ebuild | Create ebuild first |
-| `~` | installed > ebuild | Warning: ebuild is behind installed version |
-| `?` | No GitHub remote-id | Cannot fetch upstream version |
-| `!` | GitHub API error | Cannot fetch upstream version |
-
-Icon priority (highest first): `!` > `~` > `+` > `↑` > `o` > (blank)
+| Priority | Icon | Condition | Rationale |
+|----------|------|-----------|-----------|
+| 1 | `!` | GitHub API error | Cannot fetch upstream version |
+| 2 | `~` | installed > ebuild | Warning: ebuild is behind installed version |
+| 3 | `+` | upstream > ebuild | Ebuild needs updating before install |
+| 4 | `↑` | ebuild = upstream > installed | Matching ebuild exists; just update installed |
+| 5 | `o` | installed = none AND upstream = ebuild | Ready to install |
+| 6 | (blank) | upstream = installed = ebuild | Everything in sync |
 
 #### Example Output
 
