@@ -2,15 +2,38 @@
 
 set -euo pipefail
 
-# Ensure required tools are available
+PARALLEL=0
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/check-updates"
+CACHE_TTL=3600
+
+show_help() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Check for upstream updates of packages in the overlay.
+
+OPTIONS
+    -h, --help          Show this help message
+    -p, --parallel N    Run N concurrent API requests (default: 1)
+    --no-cache          Disable caching of API responses
+    --clear-cache       Clear cache and exit
+
+ENVIRONMENT
+    PORTDIR_OVERLAY     Path to overlay (default: git root)
+    GITHUB_TOKEN        GitHub API token for higher rate limits
+
+CACHE
+    API responses are cached for 1 hour in ~/.cache/check-updates
+EOF
+}
+
 for cmd in xmllint grep sort tail ls curl sed jq; do
-  if ! command -v $cmd &>/dev/null; then
-    echo "error: $cmd missing" >&2
-    exit 1
-  fi
+    if ! command -v $cmd &>/dev/null; then
+        echo "error: $cmd missing" >&2
+        exit 1
+    fi
 done
 
-# Set PORTDIR_OVERLAY to current git repo root if not set
 if [[ -z "${PORTDIR_OVERLAY:-}" ]]; then
     if git rev-parse --show-toplevel &>/dev/null; then
         PORTDIR_OVERLAY="$(git rev-parse --show-toplevel)"
@@ -20,12 +43,52 @@ if [[ -z "${PORTDIR_OVERLAY:-}" ]]; then
     fi
 fi
 
-# If there are any command line arguments, print usage and exit
-if [[ $# -gt 0 ]]; then
-    echo "usage: $(basename "$0")" >&2
-    echo "  Check for upstream updates of packages in the overlay" >&2
-    exit 1
-fi
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -p|--parallel)
+            PARALLEL="${2:-4}"
+            shift 2
+            ;;
+        --no-cache)
+            CACHE_TTL=0
+            shift
+            ;;
+        --clear-cache)
+            rm -rf "$CACHE_DIR"
+            echo "Cache cleared"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+mkdir -p "$CACHE_DIR"
+
+get_cached() {
+    local key="$1"
+    local cache_file="${CACHE_DIR}/${key}"
+    if [[ $CACHE_TTL -gt 0 && -f "$cache_file" ]]; then
+        local age=$(($(date +%s) - $(stat -c %Y "$cache_file" 2>/dev/null || stat -f %m "$cache_file")))
+        if [[ $age -lt $CACHE_TTL ]]; then
+            cat "$cache_file"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+set_cached() {
+    local key="$1"
+    local value="$2"
+    echo "$value" > "${CACHE_DIR}/${key}"
+}
 
 get_EGIT_REPO_URI() {
     local CATEGORY="$1"
@@ -43,36 +106,98 @@ get_upstream_version() {
     if [[ -z "$EGIT_REPO_URI" ]]; then
         echo ""
         return
-     fi
-    local version
-    version=$(curl -s "https://api.github.com/repos/${EGIT_REPO_URI}/releases/latest" | jq -r '.tag_name // empty | ltrimstr("v")')
-    if [[ -z "$version" ]]; then
-        version=$(curl -s "https://api.github.com/repos/${EGIT_REPO_URI}/tags" | jq -r '.[0].name // empty | ltrimstr("v")')
     fi
-    echo "$version"
+
+    local cache_key="gh_${EGIT_REPO_URI//\//_}"
+    if cached=$(get_cached "$cache_key"); then
+        echo "$cached"
+        return
+    fi
+
+    local headers=(-H "Accept: application/vnd.github+json")
+    headers+=(-H "X-GitHub-Api-Version: 2022-11-28")
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+        headers+=(-H "Authorization: Bearer $GITHUB_TOKEN")
+    fi
+
+    local version=""
+    local rate_limited=false
+
+    if version=$(curl -s "${headers[@]}" "https://api.github.com/repos/${EGIT_REPO_URI}/releases/latest" | jq -r '.tag_name // empty | ltrimstr("v")') && [[ -n "$version" ]]; then
+        set_cached "$cache_key" "$version"
+        echo "$version"
+        return
+    fi
+
+    local http_code=$(curl -s -o /dev/null -w "%{http_code}" "${headers[@]}" "https://api.github.com/repos/${EGIT_REPO_URI}/releases/latest")
+    if [[ "$http_code" == "403" ]]; then
+        local remaining=$(curl -s "${headers[@]}" -o /dev/null -w "%{http_code}" -I "https://api.github.com/repos/${EGIT_REPO_URI}" 2>/dev/null | grep -i ratelimit-remaining | awk '{print $2}' || echo "0")
+        if [[ "${remaining:-0}" == "0" ]]; then
+            rate_limited=true
+        fi
+    fi
+
+    if [[ "$rate_limited" == "true" ]]; then
+        if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+            echo "rate-limited" >&2
+        else
+            echo "rate-limited (set GITHUB_TOKEN for higher limits)" >&2
+        fi
+        echo ""
+        return
+    fi
+
+    if version=$(curl -s -L "${headers[@]}" "https://api.github.com/repos/${EGIT_REPO_URI}/tags" | jq -r '.[0].name // empty | ltrimstr("v")') && [[ -n "$version" ]]; then
+        set_cached "$cache_key" "$version"
+        echo "$version"
+        return
+    fi
+
+    echo ""
+}
+
+get_installed_version() {
+    local PN="$1"
+    local installed=$(ls -d /var/db/pkg/*/"${PN}"-*/ 2>/dev/null | head -1)
+    if [[ -z "$installed" ]]; then
+        echo ""
+        return
+    fi
+    basename "$installed" | sed 's/^'"${PN}"'-//'
+}
+
+get_highest_ebuild_version() {
+    local category="$1"
+    local PN="$2"
+    local pkg_dir="${PORTDIR_OVERLAY}/${category}/${PN}"
+    local ebuilds
+    ebuilds=$(ls "${pkg_dir}"/${PN}-*.ebuild 2>/dev/null | grep -v '9999' || true)
+    if [[ -z "$ebuilds" ]]; then
+        echo ""
+        return
+    fi
+    echo "$ebuilds" | sort -V | tail -1 | sed 's/.*-\([0-9].*\)\.ebuild/\1/'
 }
 
 check_pkg() {
-    local display="$1"
-    local CATEGORY_PN="$2"
-    local CATEGORY="${CATEGORY_PN%/*}"
-    local PN="${CATEGORY_PN#*/}"
+    local PN="$1"
+    local CATEGORY="$2"
 
     local EGIT_REPO_URI PV_EBUILD PV="" PV_UPSTREAM
     EGIT_REPO_URI=$(get_EGIT_REPO_URI "$CATEGORY" "$PN")
     if [[ -z "$EGIT_REPO_URI" ]]; then
-        echo "${display}: (non-github source)"
+        echo "${PN}: (non-github source)"
         return
     fi
     PV_UPSTREAM=$(get_upstream_version "$EGIT_REPO_URI")
     if [[ -z "$PV_UPSTREAM" ]]; then
-        echo "${display}: (github api error)"
+        echo "${PN}: (github api error)"
         return
     fi
-    PV_EBUILD=$(ls "${PORTDIR_OVERLAY}/${CATEGORY}/${PN}/"${PN}-*.ebuild 2>/dev/null | grep -v '9999' | sort -V | tail -1 | sed 's/.*-\([0-9]*\.[0-9]*\.[0-9]*\)\.ebuild/\1/')
-    PV=$(equery list -F '$version' "$PN" 2>/dev/null || echo "")
+    PV_EBUILD=$(get_highest_ebuild_version "$CATEGORY" "$PN")
+    PV=$(get_installed_version "$PN")
 
-    echo -n "${display}: ${PV_UPSTREAM} "
+    echo -n "${PN}: ${PV_UPSTREAM} "
     if [[ -n "$PV" && "$PV" == "$PV_UPSTREAM" ]]; then
         echo "(up to date)"
     elif [[ -n "$PV" ]]; then
@@ -84,7 +209,6 @@ check_pkg() {
 
 discover_packages() {
     local overlay="$1"
-    # Get unique package directories containing ebuilds
     while IFS= read -r pkg_dir; do
         rel_path="${pkg_dir#$overlay/}"
         CATEGORY="${rel_path%%/*}"
@@ -92,13 +216,26 @@ discover_packages() {
         if [[ "$CATEGORY" == "acct-user" || "$CATEGORY" == "acct-group" ]]; then
             continue
         fi
-        echo "$PN:$CATEGORY/$PN"
+        echo "$PN $CATEGORY"
     done < <(find "$overlay" -name "*.ebuild" -type f -exec dirname {} \; | sort -u)
 }
 
-# Main
-while IFS= read -r entry; do
-    display="${entry%:*}"
-    CATEGORY_PN="${entry#*:}"
-    check_pkg "$display" "$CATEGORY_PN"
-done < <(discover_packages "$PORTDIR_OVERLAY")
+export -f get_EGIT_REPO_URI
+export -f get_upstream_version
+export -f get_installed_version
+export -f get_highest_ebuild_version
+export -f check_pkg
+export -f get_cached
+export -f set_cached
+export CACHE_DIR
+export CACHE_TTL
+export PORTDIR_OVERLAY
+export GITHUB_TOKEN
+
+if [[ $PARALLEL -gt 0 ]]; then
+    discover_packages "$PORTDIR_OVERLAY" | xargs -P "$PARALLEL" -n 2 bash -c 'check_pkg "$0" "$1"' 2>&1 | sort
+else
+    while read -r PN CATEGORY; do
+        check_pkg "$PN" "$CATEGORY" 2>&1
+    done < <(discover_packages "$PORTDIR_OVERLAY") | sort
+fi
