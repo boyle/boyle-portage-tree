@@ -53,6 +53,7 @@ ebuild ./pkg-1.0.ebuild install  # Install to staging dir
 - **Quotes**: Always quote variables: `"${S}"` not `${S}`
 - **Newline**: End file with trailing newline
 - **Executable**: Never set executable bit on `files/*` helpers
+- **$PV**: Do NOT set manually - derived from filename
 
 ### Variables
 
