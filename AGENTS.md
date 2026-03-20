@@ -4,19 +4,11 @@ Gentoo overlay containing ebuilds for various tools.
 
 ## Current Packages
 
-| Package | Category | Type | Description |
-|---------|----------|------|-------------|
-| svls | sci-electronics | Cargo | SystemVerilog language server |
-| viu | media-video | Cargo | Terminal image viewer |
-| yosys | sci-electronics | Makefile | RTL synthesis framework |
-| verilator | sci-electronics | Autotools | Verilog/SystemVerilog simulator |
-| opencode-bin | dev-util | Binary | AI coding agent |
-| obsidian | app-text | Deb | Markdown knowledge base |
-| ollama | sci-ml | Go | LLM runner |
-| clgpustress | app-benchmarks | Makefile | OpenCL GPU stress test |
-| gputest | app-benchmarks | Binary | GPU benchmark |
-| ollama | acct-user | acct-user | Ollama service user |
-| ollama | acct-group | acct-group | Ollama service group |
+Run to list packages in the overlay:
+
+```bash
+find . -name "*.ebuild" ! -name "*-9999.ebuild" | sed 's|^\./||; s|/[^/]*$||' | sort -u
+```
 
 ## Build/Lint/Test Commands
 
@@ -29,6 +21,8 @@ PORTDIR_OVERLAY=/home/boyle/proj/portage pkgcheck scan
 # Scan specific package
 PORTDIR_OVERLAY=/home/boyle/proj/portage pkgcheck scan app-benchmarks/gputest
 ```
+
+Run pkgcheck to check for QA issues.
 
 ### Building packages
 
@@ -137,75 +131,25 @@ portage/
 - https://wiki.gentoo.org/wiki/Writing_Rust_ebuilds
 - Skeleton ebuild: `/var/db/repos/gentoo/skel.ebuild`
 
-## Tested Packages
+## Known Issues
 
-All packages have been tested with `ebuild` (unpack/prepare/compile) and are working.
-
-| Package | Notes |
-|---------|-------|
-| gputest | Binary package; install fails as non-root (expected) |
-| obsidian | Binary .deb package |
-| svls | Cargo build (~4m) |
-| opencode-bin | Binary package; install fails as non-root (expected) |
-| ollama (sci-ml) | Large Go/C++ project; build takes 10-30+ minutes |
-| acct-group/ollama | acct-group eclass |
-| acct-user/ollama | acct-user eclass |
-| yosys | Large C++ project; build takes 10-30+ minutes |
-| verilator | C++ with autotools; tested 2026-03-18 |
-| clgpustress | Makefile build |
-| viu | Cargo build (~2m) |
-
-### Known Issues
-
-- **verilator**: Debug flags (`-Og -ggdb -gz`) are unconditionally compiled via `CFG_CXXFLAGS_DBG`. Bug 887917 sed was broken (wrong variable names). Not critical - PORTAGE_STRIP handles stripping.
 - **yosys**: gcc-15 warnings (`Wmaybe-uninitialized`, `Warray-bounds`) in upstream code.
 - **clgpustress**: Hardcoded OpenCL include path in Makefile (`/home/mat/docs/...`).
 - **gputest**: Patch warning "patch unexpectedly ends in middle of line" (minor fuzz, still applies).
 
-## Pending Work
+## Utility Scripts
 
-### pkgcheck Issues (from `pkgcheck scan`)
+### check-updates
 
-| Package | Issue | Priority |
-|---------|-------|----------|
-| opencode-bin | RedundantVersion (old 1.2.20), EmptyGlobalAssignment, MissingRemoteId | Medium |
-| obsidian | MissingRemoteId, UnnecessaryManifest (old versions), UnknownLicense | Low |
-| ollama (sci-ml) | UnknownUseFlags (mkl, rocm), MatchingChksums, UnnecessaryManifest | Medium |
-| clgpustress | NonsolvableDepsInDev/Stable, BadFilename, UnnecessaryManifest | High |
-| acct-group/ollama, acct-user/ollama | PotentialStable | Low |
+Checks for upstream updates of packages in the overlay.
 
-### Version Updates Needed
-
-| Package | Current | Latest |
-|---------|---------|--------|
-| opencode-bin | 1.2.26 | Check GitHub |
-| ollama (sci-ml) | 0.17.7 | Check GitHub |
-
-## Improve check-updates
-
-### Final Implementation Plan
-
-1. Add sleep 2 to avoid rate limiting during development
-2. Parse metadata.xml for GitHub remote-id using xmllint (with grep fallback)
-3. Rename variables to ebuild semantics:
-   - PV_UPSTREAM (upstream version)
-   - PV_EBUILD (version in ebuild)
-   - PV (installed version)
-   - PN (package name)
-   - CATEGORY_PN (category/package path)
-   - EGIT_REPO_URI (GitHub repo URL)
-4. Simplify equery: `equery list -F '$version' "$PN" 2>/dev/null || echo ""`
-5. Simplify output logic with `continue` statements to reduce nesting
-6. Test after each implementation step
-7. Auto-discover packages by scanning entire overlay:
-   - Skip acct-user/* and acct-group/* (system packages)
-   - For each ebuild, parse metadata.xml for GitHub remote-id
-   - If no GitHub remote-id, show "(non-github source)"
-8. Remove sleep 2 as final step after testing
-
-### Expected Output Format
+```bash
+./bin/check-updates
 ```
-ollama: 0.18.2 (0.17.7, installed)
-opencode-bin: 1.2.27 (1.2.20, installed)
-svls: 0.2.14 (up to date)
+
+Output format:
 ```
+package: <upstream-version> (<status>)
+```
+
+Status can be: `(up to date)`, `(<installed-version>, installed)`, or `(not installed)`.

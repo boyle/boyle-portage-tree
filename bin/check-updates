@@ -2,41 +2,103 @@
 
 set -euo pipefail
 
-PACKAGES=(
-    "ollama:sci-ml/ollama"
-    "opencode-bin:dev-util/opencode-bin"
-    "svls:sci-electronics/svls"
-)
+# Ensure required tools are available
+for cmd in xmllint grep sort tail ls curl sed jq; do
+  if ! command -v $cmd &>/dev/null; then
+    echo "error: $cmd missing" >&2
+    exit 1
+  fi
+done
+
+# Set PORTDIR_OVERLAY to current git repo root if not set
+if [[ -z "${PORTDIR_OVERLAY:-}" ]]; then
+    if git rev-parse --show-toplevel &>/dev/null; then
+        PORTDIR_OVERLAY="$(git rev-parse --show-toplevel)"
+    else
+        echo "ERROR: PORTDIR_OVERLAY not set and not in a git repository" >&2
+        exit 1
+    fi
+fi
+
+# If there are any command line arguments, print usage and exit
+if [[ $# -gt 0 ]]; then
+    echo "usage: $(basename "$0")" >&2
+    echo "  Check for upstream updates of packages in the overlay" >&2
+    exit 1
+fi
+
+get_EGIT_REPO_URI() {
+    local CATEGORY="$1"
+    local PN="$2"
+    local metadata_file="${PORTDIR_OVERLAY}/${CATEGORY}/${PN}/metadata.xml"
+    if [[ ! -f "$metadata_file" ]]; then
+        echo ""
+        return
+    fi
+    xmllint --xpath "string(//upstream/remote-id[@type='github'])" "$metadata_file" 2>/dev/null || echo ""
+}
+
+get_upstream_version() {
+    local EGIT_REPO_URI="$1"
+    if [[ -z "$EGIT_REPO_URI" ]]; then
+        echo ""
+        return
+     fi
+    local version
+    version=$(curl -s "https://api.github.com/repos/${EGIT_REPO_URI}/releases/latest" | jq -r '.tag_name // empty | ltrimstr("v")')
+    if [[ -z "$version" ]]; then
+        version=$(curl -s "https://api.github.com/repos/${EGIT_REPO_URI}/tags" | jq -r '.[0].name // empty | ltrimstr("v")')
+    fi
+    echo "$version"
+}
 
 check_pkg() {
     local display="$1"
-    local cat_pkg="$2"
-    local category="${cat_pkg%/*}"
-    local pkg="${cat_pkg#*/}"
+    local CATEGORY_PN="$2"
+    local CATEGORY="${CATEGORY_PN%/*}"
+    local PN="${CATEGORY_PN#*/}"
 
-    local github_repo
-    case "$pkg" in
-    pv_ebuild=$(ls "${PORTDIR_OVERLAY}/${category}/${pkg}/"${pkg}-*.ebuild 2>/dev/null | grep -v '9999' | sort -V | tail -1 | sed 's/.*-\([0-9]*\.[0-9]*\.[0-9]*\)\.ebuild/\1/')
-    pv_installed=$(equery list "$pkg" 2>/dev/null | head -1 | sed 's/.*-\([0-9]*\.[0-9]*\.[0-9]*\)/\1/')
+    local EGIT_REPO_URI PV_EBUILD PV="" PV_UPSTREAM
+    EGIT_REPO_URI=$(get_EGIT_REPO_URI "$CATEGORY" "$PN")
+    if [[ -z "$EGIT_REPO_URI" ]]; then
+        echo "${display}: (non-github source)"
+        return
+    fi
+    PV_UPSTREAM=$(get_upstream_version "$EGIT_REPO_URI")
+    if [[ -z "$PV_UPSTREAM" ]]; then
+        echo "${display}: (github api error)"
+        return
+    fi
+    PV_EBUILD=$(ls "${PORTDIR_OVERLAY}/${CATEGORY}/${PN}/"${PN}-*.ebuild 2>/dev/null | grep -v '9999' | sort -V | tail -1 | sed 's/.*-\([0-9]*\.[0-9]*\.[0-9]*\)\.ebuild/\1/')
+    PV=$(equery list -F '$version' "$PN" 2>/dev/null || echo "")
 
-    echo -n "${display}: ${pv_new} "
-    if [[ "$pv_new" != "$pv_ebuild" ]]; then
-        if [[ -n "$pv_installed" && "$pv_installed" != "$pv_new" ]]; then
-            echo "(${pv_installed}, installed)"
-        else
-            echo "(${pv_ebuild})"
-        fi
+    echo -n "${display}: ${PV_UPSTREAM} "
+    if [[ -n "$PV" && "$PV" == "$PV_UPSTREAM" ]]; then
+        echo "(up to date)"
+    elif [[ -n "$PV" ]]; then
+        echo "(${PV}, installed)"
     else
-        if [[ -n "$pv_installed" && "$pv_installed" != "$pv_new" ]]; then
-            echo "(${pv_installed}, installed)"
-        else
-            echo "(up to date)"
-        fi
+        echo "(not installed)"
     fi
 }
 
-for entry in "${PACKAGES[@]}"; do
+discover_packages() {
+    local overlay="$1"
+    # Get unique package directories containing ebuilds
+    while IFS= read -r pkg_dir; do
+        rel_path="${pkg_dir#$overlay/}"
+        CATEGORY="${rel_path%%/*}"
+        PN="${rel_path#*/}"
+        if [[ "$CATEGORY" == "acct-user" || "$CATEGORY" == "acct-group" ]]; then
+            continue
+        fi
+        echo "$PN:$CATEGORY/$PN"
+    done < <(find "$overlay" -name "*.ebuild" -type f -exec dirname {} \; | sort -u)
+}
+
+# Main
+while IFS= read -r entry; do
     display="${entry%:*}"
-    cat_pkg="${entry#*:}"
-    check_pkg "$display" "$cat_pkg"
-done
+    CATEGORY_PN="${entry#*:}"
+    check_pkg "$display" "$CATEGORY_PN"
+done < <(discover_packages "$PORTDIR_OVERLAY")
