@@ -330,9 +330,9 @@ export MAX_PN_LEN
 if [[ $PARALLEL -gt 0 ]]; then
     while read -r PN CATEGORY; do
         check_pkg "$PN" "$CATEGORY" 2>&1
-    done < <(discover_packages "$PORTDIR_OVERLAY") | sort
+    done < <(discover_packages "$PORTDIR_OVERLAY") | sort -k2,2
 else
     while read -r PN CATEGORY; do
         check_pkg "$PN" "$CATEGORY" 2>&1
-    done < <(discover_packages "$PORTDIR_OVERLAY") | sort
+    done < <(discover_packages "$PORTDIR_OVERLAY") | sort -k2,2
 fi
