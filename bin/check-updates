@@ -34,6 +34,26 @@ for cmd in xmllint grep sort tail ls curl sed jq; do
     fi
 done
 
+version_compare() {
+    local v1="$1"
+    local v2="$2"
+    if [[ "$v1" == "$v2" ]]; then
+        echo "0"
+    elif printf '%s\n%s\n' "$v1" "$v2" | sort -V | head -1 | grep -q "^${v1}$"; then
+        echo "-1"
+    else
+        echo "1"
+    fi
+}
+
+version_gt() {
+    [[ "$(version_compare "$1" "$2")" == "1" ]]
+}
+
+version_lt() {
+    [[ "$(version_compare "$1" "$2")" == "-1" ]]
+}
+
 if [[ -z "${PORTDIR_OVERLAY:-}" ]]; then
     if git rev-parse --show-toplevel &>/dev/null; then
         PORTDIR_OVERLAY="$(git rev-parse --show-toplevel)"
@@ -158,7 +178,8 @@ get_upstream_version() {
 
 get_installed_version() {
     local PN="$1"
-    local installed=$(ls -d /var/db/pkg/*/"${PN}"-*/ 2>/dev/null | head -1)
+    local installed
+    installed=$(ls -d /var/db/pkg/*/"${PN}"-*/ 2>/dev/null | grep -v '/acct-' | head -1)
     if [[ -z "$installed" ]]; then
         echo ""
         return
@@ -183,27 +204,75 @@ check_pkg() {
     local PN="$1"
     local CATEGORY="$2"
 
-    local EGIT_REPO_URI PV_EBUILD PV="" PV_UPSTREAM
+    local EGIT_REPO_URI PV_EBUILD PV_INSTALLED PV_UPSTREAM
+    local icon=" " suffix="" parts=()
+    local padding=""
+    local pad_len=$((MAX_PN_LEN - ${#PN} + 2))
+    printf -v padding '%*s' "$pad_len"
+
     EGIT_REPO_URI=$(get_EGIT_REPO_URI "$CATEGORY" "$PN")
     if [[ -z "$EGIT_REPO_URI" ]]; then
-        echo "${PN}: (non-github source)"
+        echo "? ${PN}:"
         return
     fi
+
     PV_UPSTREAM=$(get_upstream_version "$EGIT_REPO_URI")
     if [[ -z "$PV_UPSTREAM" ]]; then
-        echo "${PN}: (github api error)"
+        echo "! ${PN}:"
         return
     fi
-    PV_EBUILD=$(get_highest_ebuild_version "$CATEGORY" "$PN")
-    PV=$(get_installed_version "$PN")
 
-    echo -n "${PN}: ${PV_UPSTREAM} "
-    if [[ -n "$PV" && "$PV" == "$PV_UPSTREAM" ]]; then
-        echo "(up to date)"
-    elif [[ -n "$PV" ]]; then
-        echo "(${PV}, installed)"
+    PV_EBUILD=$(get_highest_ebuild_version "$CATEGORY" "$PN")
+    PV_INSTALLED=$(get_installed_version "$PN")
+
+    if [[ -n "$PV_INSTALLED" && -n "$PV_EBUILD" ]]; then
+        if version_gt "$PV_INSTALLED" "$PV_EBUILD"; then
+            icon="~ "
+            parts+=("WARNING: ebuild ${PV_EBUILD} is behind installed")
+        elif version_gt "$PV_UPSTREAM" "$PV_EBUILD"; then
+            icon="+ "
+            if [[ "$PV_INSTALLED" == "$PV_EBUILD" ]]; then
+                parts+=("installed ${PV_INSTALLED}")
+            else
+                parts+=("installed ${PV_INSTALLED}")
+                parts+=("ebuild ${PV_EBUILD}")
+            fi
+        elif version_gt "$PV_INSTALLED" "$PV_UPSTREAM"; then
+            icon="↑ "
+            parts+=("installed ${PV_INSTALLED}")
+        fi
+    elif [[ -n "$PV_INSTALLED" ]]; then
+        if version_gt "$PV_UPSTREAM" "$PV_INSTALLED"; then
+            icon="↑ "
+            parts+=("installed ${PV_INSTALLED}")
+        elif version_gt "$PV_INSTALLED" "$PV_UPSTREAM"; then
+            icon="~ "
+            parts+=("WARNING: ebuild ${PV_EBUILD:-none} is behind installed")
+        fi
+    elif [[ -n "$PV_EBUILD" ]]; then
+        if version_gt "$PV_UPSTREAM" "$PV_EBUILD"; then
+            icon="+ "
+            parts+=("ebuild ${PV_EBUILD}")
+        else
+            icon="o "
+        fi
+    fi
+
+    if [[ ${#parts[@]} -gt 0 ]]; then
+        local joined=""
+        local sep=""
+        for part in "${parts[@]}"; do
+            joined="${joined}${sep}${part}"
+            sep=", "
+        done
+        suffix="(${joined})"
+    fi
+
+    echo -n "${icon}${PN}:${padding} ${PV_UPSTREAM}"
+    if [[ -n "$suffix" ]]; then
+        echo " ${suffix}"
     else
-        echo "(not installed)"
+        echo ""
     fi
 }
 
@@ -220,6 +289,17 @@ discover_packages() {
     done < <(find "$overlay" -name "*.ebuild" -type f -exec dirname {} \; | sort -u)
 }
 
+get_max_len() {
+    local max_len=0
+    while read -r PN CATEGORY; do
+        local len=${#PN}
+        if [[ $len -gt $max_len ]]; then
+            max_len=$len
+        fi
+    done < <(discover_packages "$PORTDIR_OVERLAY")
+    echo $max_len
+}
+
 export -f get_EGIT_REPO_URI
 export -f get_upstream_version
 export -f get_installed_version
@@ -227,13 +307,21 @@ export -f get_highest_ebuild_version
 export -f check_pkg
 export -f get_cached
 export -f set_cached
+export -f version_compare
+export -f version_gt
+export -f version_lt
 export CACHE_DIR
 export CACHE_TTL
 export PORTDIR_OVERLAY
 export GITHUB_TOKEN
 
+MAX_PN_LEN=$(get_max_len)
+export MAX_PN_LEN
+
 if [[ $PARALLEL -gt 0 ]]; then
-    discover_packages "$PORTDIR_OVERLAY" | xargs -P "$PARALLEL" -n 2 bash -c 'check_pkg "$0" "$1"' 2>&1 | sort
+    while read -r PN CATEGORY; do
+        check_pkg "$PN" "$CATEGORY" 2>&1
+    done < <(discover_packages "$PORTDIR_OVERLAY") | sort
 else
     while read -r PN CATEGORY; do
         check_pkg "$PN" "$CATEGORY" 2>&1

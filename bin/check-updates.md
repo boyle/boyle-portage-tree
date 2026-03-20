@@ -55,20 +55,57 @@ Checks for upstream updates of packages in a Gentoo overlay by comparing GitHub 
 
 - MUST fetch upstream version from GitHub
 - MUST detect installed version via `/var/db/pkg`
-- MUST determine if installed version matches upstream
-- MUST find highest versioned ebuild in overlay (for future use)
+- MUST find highest versioned ebuild in overlay
+- MUST determine icon based on comparison of all three versions
+- MUST include `(ebuild ...)` and `(installed ...)` only when they differ from upstream
 
 ### FR5: Output Format
 
-Output one line per package in format: `name: version (status)`
+Output one line per package in format: `<icon> <name>: <upstream version> [(ebuild <version>)][(installed <version>)]`
 
-| Status Condition | Output |
-|------------------|--------|
-| Upstream matches installed | `name: 1.2.3 (up to date)` |
-| Installed but outdated | `name: 1.2.4 (1.2.3, installed)` |
-| Not installed | `name: 1.2.4 (not installed)` |
-| No GitHub remote-id | `name: (non-github source)` |
-| API error | `name: (github api error)` |
+Optional version info is only shown when it differs from upstream.
+
+#### Icon Legend
+
+| Icon | Meaning | Action Required |
+|------|---------|-----------------|
+| (blank) | Up to date | None |
+| `↑` | Update available | Run `emerge pkg` to update installed package |
+| `+` | Ebuild needs update | Create or update ebuild before installing |
+| `o` | Not installed | Run `emerge pkg` to install |
+| `?` | Non-GitHub source | Manual check needed |
+| `!` | API error | Investigate |
+| `~` | Anomaly detected | Warning: installed version is newer than ebuild |
+
+#### Icon Logic
+
+Icons are determined by comparing upstream, ebuild, and installed versions:
+
+| Icon | Condition | Rationale |
+|------|-----------|-----------|
+| (blank) | upstream = installed = ebuild | Everything in sync |
+| `↑` | ebuild = upstream > installed | Matching ebuild exists; just update installed |
+| `+` | upstream > ebuild | Ebuild needs updating before install |
+| `o` | installed = none AND upstream = ebuild | Ready to install |
+| `+` | installed = none AND upstream > ebuild | Create ebuild first |
+| `~` | installed > ebuild | Warning: ebuild is behind installed version |
+| `?` | No GitHub remote-id | Cannot fetch upstream version |
+| `!` | GitHub API error | Cannot fetch upstream version |
+
+Icon priority (highest first): `!` > `~` > `+` > `↑` > `o` > (blank)
+
+#### Example Output
+
+```
+  clgpustress:  0.0.9.4
+↑ verilator:    5.046 (installed 5.044)
+o opencode-bin: 1.2.27
++ obsidian:     1.12.4 (ebuild 1.6.7)
++ svls:         0.2.14 (ebuild 0.2.12, installed 0.2.12)
+? gputest:      non-github source
+! ollama:       api error
+~ viu:          1.6.1 (WARNING: ebuild 1.5.0 is behind installed)
+```
 
 ### FR6: Caching
 
@@ -131,18 +168,24 @@ This runs 5 concurrent API requests. The default is 1 (sequential).
 ## Example Output
 
 ```
-clgpustress: 0.0.9.4 (up to date)
-gputest: (non-github source)
-obsidian: 1.12.4 (1.6.7, installed)
-opencode-bin: 1.2.27 (up to date)
-verilator: 5.046 (5.044, installed)
-viu: 1.6.1 (up to date)
-yosys: 0.63 (up to date)
+  clgpustress:  0.0.9.4
+  ollama:       0.18.2
+  opencode-bin: 1.2.27
+  svls:         0.2.14 (ebuild 0.2.12)
+  viu:          1.6.1
+  yosys:        0.63
+↑ verilator:    5.046 (installed 5.044)
++ obsidian:     1.12.4 (ebuild 1.6.7)
+? gputest:      non-github source
+! unknown-pkg:  api error
+~ broken-pkg:   2.0.0 (WARNING: ebuild 1.0.0 is behind installed)
 ```
 
-### Error Output Example
+Note: Output is sorted alphabetically. Error conditions (`?`, `!`, `~`) appear at the end.
 
-Rate limit warnings are sent to stderr:
+### Stderr Output
+
+Rate limit warnings and other errors are sent to stderr:
 
 ```
 $ ./bin/check-updates
@@ -218,7 +261,12 @@ Example workflow:
 
 ### Expected Results
 
-- All packages with GitHub remote-ids show upstream versions
-- Non-GitHub packages show `(non-github source)`
-- Installed packages show installed version in parentheses
+- Packages up-to-date show no icon
+- Packages needing update show `↑` with installed version
+- Packages with ebuild behind upstream show `+`
+- Packages not installed show `o` or `+` depending on ebuild status
+- Non-GitHub packages show `?` with "non-github source"
+- API errors show `!` with "api error"
+- Anomalies (installed > ebuild) show `~` with warning
+- Output is sorted alphabetically
 - Rate limit warnings appear in stderr when exceeded

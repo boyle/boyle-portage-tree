@@ -144,12 +144,29 @@ portage/
 Checks for upstream updates of packages in the overlay.
 
 ```bash
-./bin/check-updates
+./bin/check-updates                    # Run check
+./bin/check-updates -p 4              # With 4 parallel requests
+./bin/check-updates --clear-cache      # Clear API cache
 ```
 
-Output format:
-```
-package: <upstream-version> (<status>)
-```
+Output format: `<icon> <package>: <upstream-version> [(installed <ver>)][(ebuild <ver>)]`
 
-Status can be: `(up to date)`, `(<installed-version>, installed)`, or `(not installed)`.
+| Icon | Meaning | Action |
+|------|---------|--------|
+| (blank) | Up to date | None |
+| `↑` | Update available | `emerge pkg` |
+| `+` | Ebuild needs update | Create/update ebuild |
+| `o` | Not installed | `emerge pkg` |
+| `?` | Non-GitHub source | Manual check |
+| `!` | API error | Investigate |
+| `~` | Anomaly detected | Warning |
+
+Example output:
+```
+  ollama:         0.18.2
++ obsidian:       1.12.4 (installed 1.6.7)
+↑ verilator:      5.046 (installed 5.044)
+? gputest:
+! unknown-pkg:
+~ broken-pkg:     2.0.0 (WARNING: ebuild 1.0.0 is behind installed)
+```
