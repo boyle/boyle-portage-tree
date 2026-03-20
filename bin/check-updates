@@ -246,7 +246,7 @@ check_pkg() {
                 parts+=("installed ${PV_INSTALLED}")
                 parts+=("ebuild ${PV_EBUILD}")
             fi
-        elif version_gt "$PV_INSTALLED_CMP" "$PV_UPSTREAM_CMP"; then
+        elif version_lt "$PV_INSTALLED_CMP" "$PV_EBUILD_CMP"; then
             icon="↑ "
             parts+=("installed ${PV_INSTALLED}")
         fi
