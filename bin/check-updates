@@ -184,7 +184,7 @@ get_installed_version() {
         echo ""
         return
     fi
-    basename "$installed" | sed 's/^'"${PN}"'-//'
+    basename "$installed" | sed 's/^'"${PN}"'-//; s/-r[0-9]*$//'
 }
 
 get_highest_ebuild_version() {
@@ -197,7 +197,7 @@ get_highest_ebuild_version() {
         echo ""
         return
     fi
-    echo "$ebuilds" | sort -V | tail -1 | sed 's/.*-\([0-9].*\)\.ebuild/\1/'
+    echo "$ebuilds" | sort -V | tail -1 | sed 's/.*-\([0-9].*\)\.ebuild/\1/; s/-r[0-9]*$//'
 }
 
 check_pkg() {
@@ -205,7 +205,7 @@ check_pkg() {
     local CATEGORY="$2"
 
     local EGIT_REPO_URI PV_EBUILD PV_INSTALLED PV_UPSTREAM
-    local icon=" " suffix="" parts=()
+    local icon="  " suffix="" parts=()
     local padding=""
     local pad_len=$((MAX_PN_LEN - ${#PN} + 2))
     printf -v padding '%*s' "$pad_len"
@@ -222,35 +222,44 @@ check_pkg() {
         return
     fi
 
-    PV_EBUILD=$(get_highest_ebuild_version "$CATEGORY" "$PN")
-    PV_INSTALLED=$(get_installed_version "$PN")
+    PV_EBUILD_RAW=$(get_highest_ebuild_version "$CATEGORY" "$PN")
+    PV_INSTALLED_RAW=$(get_installed_version "$PN")
+
+    # Store raw for display, strip -r suffix for comparison
+    local PV_EBUILD="${PV_EBUILD_RAW}"
+    local PV_INSTALLED="${PV_INSTALLED_RAW}"
+    local PV_EBUILD_CMP="${PV_EBUILD_RAW%-r*}"
+    local PV_INSTALLED_CMP="${PV_INSTALLED_RAW%-r*}"
+    local PV_UPSTREAM_CMP="${PV_UPSTREAM%-r*}"
+
+    # Use stripped versions for comparisons
 
     if [[ -n "$PV_INSTALLED" && -n "$PV_EBUILD" ]]; then
-        if version_gt "$PV_INSTALLED" "$PV_EBUILD"; then
+        if version_gt "$PV_INSTALLED_CMP" "$PV_EBUILD_CMP"; then
             icon="~ "
             parts+=("WARNING: ebuild ${PV_EBUILD} is behind installed")
-        elif version_gt "$PV_UPSTREAM" "$PV_EBUILD"; then
+        elif version_gt "$PV_UPSTREAM_CMP" "$PV_EBUILD_CMP"; then
             icon="+ "
-            if [[ "$PV_INSTALLED" == "$PV_EBUILD" ]]; then
+            if [[ "$PV_INSTALLED_CMP" == "$PV_EBUILD_CMP" ]]; then
                 parts+=("installed ${PV_INSTALLED}")
             else
                 parts+=("installed ${PV_INSTALLED}")
                 parts+=("ebuild ${PV_EBUILD}")
             fi
-        elif version_gt "$PV_INSTALLED" "$PV_UPSTREAM"; then
+        elif version_gt "$PV_INSTALLED_CMP" "$PV_UPSTREAM_CMP"; then
             icon="↑ "
             parts+=("installed ${PV_INSTALLED}")
         fi
     elif [[ -n "$PV_INSTALLED" ]]; then
-        if version_gt "$PV_UPSTREAM" "$PV_INSTALLED"; then
+        if version_gt "$PV_UPSTREAM_CMP" "$PV_INSTALLED_CMP"; then
             icon="↑ "
             parts+=("installed ${PV_INSTALLED}")
-        elif version_gt "$PV_INSTALLED" "$PV_UPSTREAM"; then
+        elif version_gt "$PV_INSTALLED_CMP" "$PV_UPSTREAM_CMP"; then
             icon="~ "
-            parts+=("WARNING: ebuild ${PV_EBUILD:-none} is behind installed")
+            parts+=("WARNING: ebuild ${PV_EBUILD_RAW:-none} is behind installed")
         fi
     elif [[ -n "$PV_EBUILD" ]]; then
-        if version_gt "$PV_UPSTREAM" "$PV_EBUILD"; then
+        if version_gt "$PV_UPSTREAM_CMP" "$PV_EBUILD_CMP"; then
             icon="+ "
             parts+=("ebuild ${PV_EBUILD}")
         else
