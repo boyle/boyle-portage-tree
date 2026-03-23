@@ -1,0 +1,25 @@
+#!/bin/bash
+# Usage: ./create-crates-list path/to/Cargo.lock
+# Outputs formatted CRATES list for ebuild
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 <path/to/Cargo.lock>"
+  exit 1
+fi
+
+cargo_lock="$1"
+
+if [[ ! -f "$cargo_lock" ]]; then
+  echo "Error: Cargo.lock not found at $cargo_lock"
+  exit 1
+fi
+
+# Extract name@version pairs from Cargo.lock
+grep -A 2 '\[\[package\]\]' "$cargo_lock" | \
+  grep -E '(name|version)' | \
+  sed -n 'N;s/\n/ /p' | \
+  sed -e 's/.*name = "\([^"]*\)".*version = "\([^"]*\)".*/\1@\2/' | \
+  sort | \
+  awk '{print "  " $0}' | \
+  sed 's/$/"/' | \
+  sed 's/^/"/'
