@@ -110,7 +110,7 @@ set_cached() {
     echo "$value" > "${CACHE_DIR}/${key}"
 }
 
-get_EGIT_REPO_URI() {
+get_remote_id() {
     local CATEGORY="$1"
     local PN="$2"
     local metadata_file="${PORTDIR_OVERLAY}/${CATEGORY}/${PN}/metadata.xml"
@@ -118,7 +118,25 @@ get_EGIT_REPO_URI() {
         echo ""
         return
     fi
-    xmllint --xpath "string(//upstream/remote-id[@type='github'])" "$metadata_file" 2>/dev/null || echo ""
+    local remote_id
+    remote_id=$(xmllint --xpath "string(//upstream/remote-id)" "$metadata_file" 2>/dev/null || echo "")
+    if [[ -z "$remote_id" ]]; then
+        echo ""
+        return
+    fi
+    local remote_type
+    remote_type=$(xmllint --xpath "string(//upstream/remote-id/@type)" "$metadata_file" 2>/dev/null || echo "github")
+    echo "${remote_type}:${remote_id}"
+}
+
+get_EGIT_REPO_URI() {
+    local remote_id_info="$1"
+    echo "${remote_id_info#*:}"
+}
+
+get_remote_id_type() {
+    local remote_id_info="$1"
+    echo "${remote_id_info%%:*}"
 }
 
 get_upstream_version() {
@@ -176,6 +194,35 @@ get_upstream_version() {
     echo ""
 }
 
+get_codeberg_version() {
+    local EGIT_REPO_URI="$1"
+    if [[ -z "$EGIT_REPO_URI" ]]; then
+        echo ""
+        return
+    fi
+
+    local cache_key="codeberg_${EGIT_REPO_URI//\//_}"
+    if cached=$(get_cached "$cache_key"); then
+        echo "$cached"
+        return
+    fi
+
+    local version=""
+    if version=$(curl -s "https://codeberg.org/api/v1/repos/${EGIT_REPO_URI}/releases/latest" | jq -r '.tag_name // empty | ltrimstr("v")') && [[ -n "$version" ]]; then
+        set_cached "$cache_key" "$version"
+        echo "$version"
+        return
+    fi
+
+    if version=$(curl -s -L "https://codeberg.org/api/v1/repos/${EGIT_REPO_URI}/tags" | jq -r '.[0].name // empty | ltrimstr("v")') && [[ -n "$version" ]]; then
+        set_cached "$cache_key" "$version"
+        echo "$version"
+        return
+    fi
+
+    echo ""
+}
+
 get_installed_version() {
     local PN="$1"
     local installed
@@ -200,25 +247,49 @@ get_highest_ebuild_version() {
     echo "$ebuilds" | sort -V | tail -1 | sed 's/.*-\([0-9].*\)\.ebuild/\1/; s/-r[0-9]*$//'
 }
 
+get_upstream_version_for_type() {
+    local remote_type="$1"
+    local repo_uri="$2"
+
+    case "$remote_type" in
+        github)
+            get_upstream_version "$repo_uri"
+            ;;
+        codeberg)
+            get_codeberg_version "$repo_uri"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
+
 check_pkg() {
     local PN="$1"
     local CATEGORY="$2"
 
-    local EGIT_REPO_URI PV_EBUILD PV_INSTALLED PV_UPSTREAM
+    local REMOTE_ID REMOTE_TYPE EGIT_REPO_URI PV_EBUILD PV_INSTALLED PV_UPSTREAM
     local icon="  " suffix="" parts=()
     local padding=""
     local pad_len=$((MAX_PN_LEN - ${#PN} + 2))
     printf -v padding '%*s' "$pad_len"
 
-    EGIT_REPO_URI=$(get_EGIT_REPO_URI "$CATEGORY" "$PN")
-    if [[ -z "$EGIT_REPO_URI" ]]; then
+    REMOTE_ID=$(get_remote_id "$CATEGORY" "$PN")
+    if [[ -z "$REMOTE_ID" ]]; then
         echo "? ${PN}:"
         return
     fi
 
-    PV_UPSTREAM=$(get_upstream_version "$EGIT_REPO_URI")
+    REMOTE_TYPE=$(get_remote_id_type "$REMOTE_ID")
+    EGIT_REPO_URI=$(get_EGIT_REPO_URI "$REMOTE_ID")
+
+    PV_UPSTREAM=$(get_upstream_version_for_type "$REMOTE_TYPE" "$EGIT_REPO_URI")
     if [[ -z "$PV_UPSTREAM" ]]; then
-        echo "! ${PN}:"
+        if [[ "$REMOTE_TYPE" != "github" ]]; then
+            echo "? ${PN}:"
+        else
+            echo "! ${PN}:"
+        fi
         return
     fi
 
@@ -309,8 +380,12 @@ get_max_len() {
     echo $max_len
 }
 
+export -f get_remote_id
 export -f get_EGIT_REPO_URI
+export -f get_remote_id_type
 export -f get_upstream_version
+export -f get_codeberg_version
+export -f get_upstream_version_for_type
 export -f get_installed_version
 export -f get_highest_ebuild_version
 export -f check_pkg

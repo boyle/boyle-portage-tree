@@ -2,7 +2,7 @@
 
 ## Overview
 
-Checks for upstream updates of packages in a Gentoo overlay by comparing GitHub release/tag versions against installed packages.
+Checks for upstream updates of packages in a Gentoo overlay by comparing release/tag versions from GitHub, Codeberg, and other hosting platforms against installed packages.
 
 ## Dependencies
 
@@ -38,10 +38,12 @@ Checks for upstream updates of packages in a Gentoo overlay by comparing GitHub 
 - MUST skip `acct-user/*` and `acct-group/*` directories
 - `-9999` live ebuilds are filtered out when checking for available versions
 
-### FR2: GitHub Repository Lookup
+### FR2: Repository Lookup
 
 - MUST read `metadata.xml` from each package directory
-- MUST extract `remote-id[@type='github']` value using XPath via xmllint
+- MUST extract `remote-id` value and `@type` attribute using XPath via xmllint
+- MUST support `github`, `codeberg`, and other remote-id types
+- MUST default to `github` type when `@type` attribute is missing (backwards compatibility)
 
 ### FR3: Version Fetching
 
@@ -150,6 +152,25 @@ GITHUB_TOKEN="ghp_xxx" ./bin/check-updates
 ```
 
 With a token, the rate limit increases to 5,000 requests per hour.
+
+## Supported Platforms
+
+Currently supported hosting platforms:
+
+| Platform | API Endpoint | Rate Limits |
+|----------|-------------|-------------|
+| GitHub | `api.github.com` | 60/hour (unauthenticated), 5000/hour with token |
+| Codeberg | `codeberg.org/api/v1` | No auth required |
+
+Other remote-id types (e.g., `gitlab`, `gitea`) are recognized but show `?` (manual check required).
+
+### Adding New Platforms
+
+To add support for a new hosting platform:
+
+1. Add a new fetcher function following the pattern of `get_codeberg_version()`
+2. Update `get_upstream_version_for_type()` to route to the new function
+3. Export the new function
 
 ## Performance
 
