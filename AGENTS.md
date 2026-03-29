@@ -92,6 +92,44 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 PATCHES=( "${FILESDIR}/fix-build.patch" )
 ```
 
+### Creating Patches
+
+To create a clean patch that applies without fuzz:
+
+1. Unpack the source:
+   ```bash
+   sudo rm -rf /var/tmp/portage/category/pkg-ver
+   export PORTDIR_OVERLAY=/home/boyle/proj/portage
+   ebuild ./category/pkg/pkg-ver.ebuild clean unpack
+   ```
+
+2. Copy the original file with `.orig` extension:
+   ```bash
+   cp path/to/file path/to/file.orig
+   ```
+
+3. Modify `path/to/file` with your intended fix (do NOT modify the `.orig` file)
+
+4. Generate the diff:
+   ```bash
+   diff -u path/to/file.orig path/to/file
+   ```
+
+5. Edit the diff output to create the patch file:
+   - Change `a/path/to/file` to `a/linux/` (or appropriate relative path)
+   - Change `b/path/to/file` to `b/linux/`  
+   - Or use `--strip=1` equivalent paths
+
+6. Test the patch:
+   ```bash
+   mkdir -p /tmp/patch-test
+   cp path/to/file.orig /tmp/patch-test/linux/my_application.cc
+   cd /tmp/patch-test
+   patch -p1 < /home/boyle/proj/portage/category/pkg/files/your-patch.patch
+   # Verify only intended changes were applied
+   diff /tmp/patch-test/linux/my_application.cc path/to/file
+   ```
+
 ### RESTRICT Flags
 
 - `RESTRICT="test"` - Package has no tests
