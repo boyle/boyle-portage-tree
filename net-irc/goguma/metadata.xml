@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>alistair.js.boyle@gmail.com</email>
+		<name>Alistair Boyle</name>
+	</maintainer>
+	<upstream>
+		<remote-id type="codeberg">emersion/goguma</remote-id>
+	</upstream>
+</pkgmetadata>
