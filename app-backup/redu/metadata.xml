@@ -2,8 +2,8 @@
 <!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
     <maintainer type="person">
-        <email>boyle@gentoo.org</email>
-        <name>Boyle</name>
+        <email>alistair.js.boyle@gmail.com</email>
+        <name>Alistair Boyle</name>
     </maintainer>
     <upstream>
         <remote-id type="github">drdo/redu</remote-id>
