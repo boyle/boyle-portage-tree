@@ -14,6 +14,7 @@ KEYWORDS="~amd64"
 DEPEND=""
 RDEPEND="${DEPEND}
 	app-backup/restic
+	net-misc/rclone
 	app-backup/redu
 	sys-fs/ncdu"
 BDEPEND=""

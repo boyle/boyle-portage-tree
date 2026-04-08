@@ -1,0 +1,20 @@
+#! /bin/sh
+[ ! -L .git/hooks/pre-commit ] && (cd .git/hooks && ln -s ../../bin/$(basename $0) pre-commit)
+if git rev-parse --verify HEAD >/dev/null 2>&1 ; then
+	against=HEAD
+else
+	# Initial commit: diff against an empty tree object
+	against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+fi
+D=${PWD}
+files=$(git diff-index --diff-filter=ACMR --name-only -r --cached $against -- | grep '\.ebuild$')
+for file in $files; do
+    x=`echo $file`
+    out="$(dirname $file)/Manifest"
+    if test "x$x" != "x"; then
+        set -x
+        ebuild $file manifest
+        git add $(dirname $file)/Manifest
+        echo "updated $file --> $out"
+    fi
+done
