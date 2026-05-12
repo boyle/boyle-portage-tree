@@ -65,7 +65,7 @@ COMMON_DEPEND="
 
 DEPEND="
 	${COMMON_DEPEND}
-	>=dev-lang/go-1.23.4
+	>=dev-lang/go-1.26.0
 "
 BDEPEND="
 	vulkan? (

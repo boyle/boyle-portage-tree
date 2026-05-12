@@ -12,7 +12,7 @@ for file in $files; do
     x=`echo $file`
     out="$(dirname $file)/Manifest"
     if test "x$x" != "x"; then
-        set -x
+        set -xe
         ebuild $file manifest
         git add $(dirname $file)/Manifest
         echo "updated $file --> $out"

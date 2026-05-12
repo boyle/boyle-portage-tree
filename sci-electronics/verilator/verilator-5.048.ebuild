@@ -31,6 +31,7 @@ RDEPEND="
 	${PYTHON_DEPS}
 	dev-lang/perl
 	virtual/zlib:=
+	dev-libs/jemalloc
 "
 
 DEPEND="
