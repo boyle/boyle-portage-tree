@@ -3,7 +3,7 @@
 
 EAPI=8
 
-FLUTTER_VERSION="3.41.6"
+FLUTTER_VERSION="3.38.1"
 
 # Flutter/Dart dependencies from pub.dev.
 # These are fetched via SRC_URI to ensure they are recorded in Manifest for offline builds.
@@ -31,7 +31,7 @@ FLUTTER_PUB_DEPS="
 	audioplayers_web@5.1.1
 	audioplayers_windows@4.2.1
 	boolean_selector@2.1.2
-	characters@1.4.1
+	characters@1.4.0
 	clock@1.1.2
 	collection@1.19.1
 	connectivity_plus@7.0.0
@@ -95,8 +95,8 @@ FLUTTER_PUB_DEPS="
 	leak_tracker_testing@3.0.2
 	linkify@5.0.0
 	lints@6.0.0
-	matcher@0.12.19
-	material_color_utilities@0.13.0
+	matcher@0.12.17
+	material_color_utilities@0.11.1
 	meta@1.17.0
 	mime@2.0.0
 	nested@1.0.0
@@ -127,7 +127,7 @@ FLUTTER_PUB_DEPS="
 	screen_retriever_macos@0.2.0
 	screen_retriever_platform_interface@0.2.0
 	screen_retriever_windows@0.2.0
-	scrollable_positioned_list@0.3.8+1
+	scrollable_positioned_list@0.3.8+1@git+https://github.com/emersion/flutter.widgets.git@edc742a7e93fbd39d2e20fc5d7f38913d8450a68@packages/scrollable_positioned_list@goguma
 	sentry@9.9.2
 	share_handler@0.0.25
 	share_handler_android@0.0.11
@@ -155,7 +155,7 @@ FLUTTER_PUB_DEPS="
 	string_scanner@1.4.1
 	synchronized@3.4.0
 	term_glyph@1.2.2
-	test_api@0.7.10
+	test_api@0.7.7
 	timezone@0.10.1
 	typed_data@1.4.0
 	unicode_emojis@0.5.1
@@ -236,13 +236,18 @@ src_prepare() {
 	default
 
 	export PUB_CACHE="${WORKDIR}/.pub-cache"
+	export FLUTTER_ALREADY_LOCKED=1
 
-	"${WORKDIR}/flutter/bin/flutter" config --no-analytics || die
-	"${WORKDIR}/flutter/bin/flutter" precache --linux || die
+	"${WORKDIR}/flutter/bin/flutter" --no-version-check config --no-analytics || die
 
 	cd "${S}"
-	# Use --offline to avoid network access; packages are already in PUB_CACHE
-	"${WORKDIR}/flutter/bin/flutter" pub get --offline || die
+	# Use dart pub get directly (not flutter pub get) to bypass Flutter tool's wrapper-level
+	# network operations. Packages are already in PUB_CACHE from flutter_src_unpack.
+	"${WORKDIR}/flutter/bin/cache/dart-sdk/bin/dart" pub get --offline --enforce-lockfile || die
+
+	# Create a minimal package_config for flutter_tools so it doesn't try to
+	# resolve its own 96+ pub.dev dependencies at startup.
+	flutter_prepare_tools
 }
 
 src_compile() {
@@ -250,13 +255,23 @@ src_compile() {
 
 	export PATH="${WORKDIR}/flutter/bin:${PATH}"
 	export PUB_CACHE="${WORKDIR}/.pub-cache"
+	export FLUTTER_ALREADY_LOCKED=1
 
-	"${WORKDIR}/flutter/bin/flutter" build linux --release || die
+	# Create plugin symlinks needed by CMake. Normally done by
+	# regeneratePlatformSpecificTooling during pub get, but we skip that with --no-pub.
+	flutter_setup_plugin_symlinks
+
+	# --no-pub skips internal pub get; we already resolved deps in src_prepare
+	# --no-version-check prevents git fetch --tags for version freshness check
+	"${WORKDIR}/flutter/bin/flutter" --no-version-check build linux --release --no-pub || die
 }
 
 src_install() {
+	exeinto /usr/lib/goguma
+	doexe "${S}/build/linux/x64/release/bundle/goguma"
 	insinto /usr/lib/goguma
-	doins -r "${S}/build/linux/x64/release/bundle/"*
+	doins -r "${S}/build/linux/x64/release/bundle/lib/"
+	doins -r "${S}/build/linux/x64/release/bundle/data/"
 
 	patchelf --remove-rpath "${ED}"/usr/lib/goguma/lib/*.so || die "Failed to remove rpaths"
 

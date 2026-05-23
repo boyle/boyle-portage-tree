@@ -1,0 +1,202 @@
+#!/bin/bash
+# flutter-update-pub-deps - Update FLUTTER_PUB_DEPS and FLUTTER_VERSION from upstream pubspec.lock
+#
+# USAGE:
+#   flutter-update-pub-deps [-i] <path/to/ebuild>
+#
+# By default, prints updated ebuild to stdout.
+# With -i, edits the ebuild file in-place.
+#
+# Downloads pubspec.lock from the upstream repo (Codeberg or GitHub) at the
+# release tag and extracts all hosted/git dependency versions to regenerate
+# the FLUTTER_PUB_DEPS list. Also checks that FLUTTER_VERSION satisfies the
+# sdk: flutter constraint in pubspec.lock.
+
+set -euo pipefail
+
+INPLACE=false
+if [[ $1 == "-i" ]]; then
+	INPLACE=true
+	shift
+fi
+
+EBUILD="${1:-}"
+if [[ -z "${EBUILD}" || ! -f "${EBUILD}" ]]; then
+	echo "Usage: $0 [-i] <path/to/ebuild>" >&2
+	exit 1
+fi
+
+# Create temp directory and ensure cleanup
+TMPDIR=$(mktemp -d) || exit 1
+trap 'rm -rf "${TMPDIR}"' EXIT
+trap 'rm -rf "${TMPDIR}"; exit 1' INT TERM HUP
+
+# Extract PV from filename (e.g. goguma-0.9.1.ebuild -> 0.9.1)
+PV=$(basename "${EBUILD}" .ebuild | sed 's/^.*\-//')
+
+# Extract first SRC_URI entry that is NOT the Flutter SDK URL and NOT FLUTTER_PUB_URIS
+SRC_URI=$(sed -n '/^SRC_URI="/,/^"/p' "${EBUILD}" \
+	| grep -v 'SRC_URI="' \
+	| grep -v '^"$' \
+	| grep -v 'flutter_infra_release' \
+	| grep -v 'FLUTTER_PUB_URIS' \
+	| head -1 \
+	| sed 's/^[[:space:]]*//')
+
+# Expand ${PV} in the URL
+SRC_URI=$(echo "${SRC_URI}" | sed 's/\${PV}/'"${PV}"'/g')
+
+if [[ -z "${SRC_URI}" ]]; then
+	echo "Error: Could not find source URL in SRC_URI" >&2
+	exit 1
+fi
+
+# Determine repo base URL (strip /releases/download/... path)
+REPO_BASE=$(echo "${SRC_URI}" | sed 's|/releases/download/.*||')
+
+# Determine raw pubspec.lock URL
+RAW_URL=""
+if echo "${REPO_BASE}" | grep -q 'codeberg.org'; then
+	RAW_URL="${REPO_BASE}/raw/tag/v${PV}/pubspec.lock"
+elif echo "${REPO_BASE}" | grep -q 'github.com'; then
+	ORG_REPO=$(echo "${REPO_BASE}" | sed 's|https://github.com/||')
+	RAW_URL="https://raw.githubusercontent.com/${ORG_REPO}/v${PV}/pubspec.lock"
+fi
+
+if [[ -z "${RAW_URL}" ]]; then
+	echo "Error: Unsupported repository host in URL: ${REPO_BASE}" >&2
+	echo "       Only codeberg.org and github.com are supported." >&2
+	exit 1
+fi
+
+echo "Fetching pubspec.lock from: ${RAW_URL}" >&2
+
+# Download pubspec.lock
+LOCKFILE="${TMPDIR}/pubspec.lock"
+if command -v curl &>/dev/null; then
+	curl -sSL -o "${LOCKFILE}" "${RAW_URL}" || { echo "Download failed"; exit 1; }
+elif command -v wget &>/dev/null; then
+	wget -q -O "${LOCKFILE}" "${RAW_URL}" || { echo "Download failed"; exit 1; }
+else
+	echo "Error: Neither curl nor wget available" >&2
+	exit 1
+fi
+
+# Validate it's a YAML file with packages
+if ! grep -q '^packages:' "${LOCKFILE}"; then
+	echo "Error: Downloaded file does not appear to be a valid pubspec.lock" >&2
+	exit 1
+fi
+
+# Detect indentation style from existing FLUTTER_PUB_DEPS
+FLUTTER_INDENT=$(sed -n '/^FLUTTER_PUB_DEPS="$/,/^"$/p' "${EBUILD}" \
+	| grep -v 'FLUTTER_PUB_DEPS="' | grep -v '^"$' \
+	| head -1 | sed 's/[^[:space:]].*//')
+
+# Run Python transformation
+python3 - \
+	"${EBUILD}" \
+	"${LOCKFILE}" \
+	"${INPLACE}" \
+	"${FLUTTER_INDENT}" \
+	<< 'PYEOF'
+import yaml
+import re
+import sys
+
+ebuild_path = sys.argv[1]
+lockfile_path = sys.argv[2]
+inplace = sys.argv[3] == 'true'
+indent = sys.argv[4]
+
+with open(lockfile_path) as f:
+	lock = yaml.safe_load(f)
+
+entries = []
+flutter_sdk_constraint = None
+
+for name, info in sorted(lock.get('packages', {}).items()):
+	v = info.get('version', '')
+	src = info.get('source', '')
+	if v == '0.0.0':
+		continue
+	if src == 'hosted':
+		entries.append(f'{name}@{v}')
+	elif src == 'git':
+		desc = info.get('description', {})
+		url = desc.get('url', '')
+		resolved = desc.get('resolved-ref', '')
+		path = desc.get('path', '')
+		gitref = desc.get('ref', '')
+		entries.append(f'{name}@{v}@git+{url}@{resolved}@{path}@{gitref}')
+
+# Extract Flutter SDK constraint from sdks section
+sdks = lock.get('sdks', {})
+if sdks:
+	flutter_sdk_constraint = sdks.get('flutter', '')
+
+with open(ebuild_path) as f:
+	content = f.read()
+
+# Replace FLUTTER_PUB_DEPS block
+old_block = re.search(r'FLUTTER_PUB_DEPS="[^"]*"', content, re.DOTALL)
+if not old_block:
+	print('ERROR: Could not find FLUTTER_PUB_DEPS block', file=sys.stderr)
+	sys.exit(1)
+
+new_deps = '\n'.join(indent + e for e in entries)
+new_block = f'FLUTTER_PUB_DEPS="\n{new_deps}\n"'
+content = content[:old_block.start()] + new_block + content[old_block.end():]
+
+# Check FLUTTER_VERSION against constraint
+flutter_version_msg = ""
+old_ver_match = re.search(r'FLUTTER_VERSION="([^"]*)"', content)
+current_ver = old_ver_match.group(1) if old_ver_match else ""
+updated_ver = current_ver
+
+if flutter_sdk_constraint and current_ver:
+	def ver_tuple(v):
+		return tuple(int(x) for x in v.split('.'))
+
+	def satisfies(constraint, version):
+		if constraint.startswith('>='):
+			min_ver = constraint[2:]
+			return ver_tuple(version) >= ver_tuple(min_ver)
+		elif constraint.startswith('^'):
+			min_ver = constraint[1:]
+			major_min = int(min_ver.split('.')[0])
+			ver_parts = version.split('.')
+			return ver_tuple(version) >= ver_tuple(min_ver) and int(ver_parts[0]) == major_min
+		else:
+			return version == constraint
+
+	if satisfies(flutter_sdk_constraint, current_ver):
+		flutter_version_msg = f"FLUTTER_VERSION {current_ver} satisfies constraint {flutter_sdk_constraint}"
+	else:
+		# Extract minimum version from constraint
+		min_ver = flutter_sdk_constraint.lstrip('>=').lstrip('^')
+		updated_ver = min_ver
+		content = re.sub(
+			r'FLUTTER_VERSION="[^"]*"',
+			f'FLUTTER_VERSION="{min_ver}"',
+			content
+		)
+		flutter_version_msg = f"Updated FLUTTER_VERSION from {current_ver} to {min_ver} (constraint {flutter_sdk_constraint})"
+elif not flutter_sdk_constraint:
+	flutter_version_msg = "No Flutter SDK constraint found in pubspec.lock"
+elif not current_ver:
+	flutter_version_msg = "No FLUTTER_VERSION found in ebuild"
+
+# Report
+hosted_count = sum(1 for e in entries if '@git+' not in e)
+git_count = sum(1 for e in entries if '@git+' in e)
+print(f"FLUTTER_PUB_DEPS regenerated from pubspec.lock: {hosted_count} hosted, {git_count} git deps", file=sys.stderr)
+print(flutter_version_msg, file=sys.stderr)
+
+if inplace:
+	with open(ebuild_path, 'w') as f:
+		f.write(content)
+	print(f"Updated {ebuild_path}", file=sys.stderr)
+else:
+	print(content, end='')
+PYEOF
