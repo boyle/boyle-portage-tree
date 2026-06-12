@@ -1,0 +1,28 @@
+From: Boyle <boyle@localhost>
+Subject: [PATCH] Fix multiprocessing pickling error on Python 3.14
+
+Python 3.14 changed the default multiprocessing start method from fork to
+forkserver on Linux. The forkserver method requires all Process() arguments
+to be picklable, but MarkupHandler.parse is a bound method referencing
+unpicklable GTK widgets. Force the fork start method for this Process.
+
+--- a/apostrophe/text_view_markup_handler.py
++++ b/apostrophe/text_view_markup_handler.py
+@@ -14,7 +14,7 @@
+ # END LICENSE
+ 
+ import regex as re
+-from multiprocessing import Pipe, Process
++from multiprocessing import Pipe, get_context
+ 
+ import gi
+ from gi.repository import GLib, Gtk, Pango
+@@ -139,7 +139,7 @@
+         self.parsing = False
+         self.apply_pending = False
+         self.parent_conn, child_conn = Pipe()
+-        Process(target=self.parse, args=(child_conn,), daemon=True).start()
++        get_context("fork").Process(target=self.parse, args=(child_conn,), daemon=True).start()
+         GLib.io_add_watch(
+             self.parent_conn.fileno(),
+             GLib.PRIORITY_DEFAULT,

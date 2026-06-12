@@ -43,6 +43,10 @@ BDEPEND="
 	virtual/pkgconfig
 "
 
+PATCHES=(
+	"${FILESDIR}/apostrophe-3.4-multiprocessing-fork.patch"
+)
+
 src_prepare() {
 	default
 	xdg_environment_reset
