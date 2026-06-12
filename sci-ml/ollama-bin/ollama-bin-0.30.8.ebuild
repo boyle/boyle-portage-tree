@@ -8,8 +8,8 @@ inherit unpacker systemd
 DESCRIPTION="Get up and running with local large language models."
 HOMEPAGE="https://ollama.com"
 SRC_URI="
-	amd64? ( https://github.com/ollama/ollama/releases/download/v${PV}/ollama-linux-amd64.tar.zst )
-	rocm?  ( https://github.com/ollama/ollama/releases/download/v${PV}/ollama-linux-amd64-rocm.tar.zst )
+	amd64? ( https://github.com/ollama/ollama/releases/download/v${PV}/ollama-linux-amd64.tar.zst -> ${P}-amd64.tar.zst )
+	rocm?  ( https://github.com/ollama/ollama/releases/download/v${PV}/ollama-linux-amd64-rocm.tar.zst -> ${P}-amd64-rocm.tar.zst )
 "
 S="${WORKDIR}"
 
