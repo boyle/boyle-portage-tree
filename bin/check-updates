@@ -118,14 +118,29 @@ get_remote_id() {
         echo ""
         return
     fi
-    local remote_id
-    remote_id=$(xmllint --xpath "string(//upstream/remote-id)" "$metadata_file" 2>/dev/null || echo "")
+
+    # Prefer pypi over other remote-id types for version checking
+    local remote_id=""
+    local remote_type=""
+    local type
+    for type in pypi github gnome-gitlab gitlab codeberg; do
+        remote_id=$(xmllint --xpath "string(//upstream/remote-id[@type='${type}'])" "$metadata_file" 2>/dev/null || echo "")
+        if [[ -n "$remote_id" ]]; then
+            remote_type="$type"
+            break
+        fi
+    done
+
+    # Fall back to first remote-id if no preferred type found
+    if [[ -z "$remote_id" ]]; then
+        remote_id=$(xmllint --xpath "string(//upstream/remote-id)" "$metadata_file" 2>/dev/null || echo "")
+        remote_type=$(xmllint --xpath "string(//upstream/remote-id/@type)" "$metadata_file" 2>/dev/null || echo "github")
+    fi
+
     if [[ -z "$remote_id" ]]; then
         echo ""
         return
     fi
-    local remote_type
-    remote_type=$(xmllint --xpath "string(//upstream/remote-id/@type)" "$metadata_file" 2>/dev/null || echo "github")
     echo "${remote_type}:${remote_id}"
 }
 
@@ -223,6 +238,73 @@ get_codeberg_version() {
     echo ""
 }
 
+get_gitlab_version() {
+    local project_path="$1"
+    local instance="${2:-}"
+    if [[ -z "$project_path" ]]; then
+        echo ""
+        return
+    fi
+
+    # Determine GitLab instance
+    # If instance passed explicitly, use it
+    # Otherwise, first segment with a dot -> self-hosted instance; otherwise gitlab.com
+    if [[ -z "$instance" ]]; then
+        instance="gitlab.com"
+        if [[ "${project_path%%/*}" == *"."* ]]; then
+            instance="${project_path%%/*}"
+            project_path="${project_path#*/}"
+        fi
+    fi
+
+    local ENCODED_PATH="${project_path//\//%2F}"
+    local cache_key="gl_${project_path//\//_}"
+    if cached=$(get_cached "$cache_key"); then
+        echo "$cached"
+        return
+    fi
+
+    local version=""
+    # Try latest release permalink first (GitLab 15.4+)
+    if version=$(curl -s "https://${instance}/api/v4/projects/${ENCODED_PATH}/releases/permalink/latest" | jq -r '.tag_name // empty | ltrimstr("v")') && [[ -n "$version" ]]; then
+        set_cached "$cache_key" "$version"
+        echo "$version"
+        return
+    fi
+
+    # Fall back to releases list
+    if version=$(curl -s "https://${instance}/api/v4/projects/${ENCODED_PATH}/releases" | jq -r '.[0].tag_name // empty | ltrimstr("v")') && [[ -n "$version" ]]; then
+        set_cached "$cache_key" "$version"
+        echo "$version"
+        return
+    fi
+
+    echo ""
+}
+
+get_pypi_version() {
+    local package_name="$1"
+    if [[ -z "$package_name" ]]; then
+        echo ""
+        return
+    fi
+
+    local cache_key="pypi_${package_name}"
+    if cached=$(get_cached "$cache_key"); then
+        echo "$cached"
+        return
+    fi
+
+    local version=""
+    if version=$(curl -s "https://pypi.org/pypi/${package_name}/json" | jq -r '.info.version // empty') && [[ -n "$version" ]]; then
+        set_cached "$cache_key" "$version"
+        echo "$version"
+        return
+    fi
+
+    echo ""
+}
+
 get_installed_version() {
     local PN="$1"
     local installed
@@ -257,6 +339,15 @@ get_upstream_version_for_type() {
             ;;
         codeberg)
             get_codeberg_version "$repo_uri"
+            ;;
+        gitlab)
+            get_gitlab_version "$repo_uri"
+            ;;
+        gnome-gitlab)
+            get_gitlab_version "$repo_uri" "gitlab.gnome.org"
+            ;;
+        pypi)
+            get_pypi_version "$repo_uri"
             ;;
         *)
             echo ""
@@ -385,6 +476,8 @@ export -f get_EGIT_REPO_URI
 export -f get_remote_id_type
 export -f get_upstream_version
 export -f get_codeberg_version
+export -f get_gitlab_version
+export -f get_pypi_version
 export -f get_upstream_version_for_type
 export -f get_installed_version
 export -f get_highest_ebuild_version
