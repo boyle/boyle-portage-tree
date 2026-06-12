@@ -18,5 +18,5 @@ RESTRICT="test"
 
 RDEPEND="
 	${PYTHON_DEPS}
-	app-text/pandoc
+	virtual/pandoc
 "

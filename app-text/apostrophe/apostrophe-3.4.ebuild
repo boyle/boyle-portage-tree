@@ -27,7 +27,7 @@ RDEPEND="
 	app-text/libspelling
 	net-libs/webkit-gtk:6[introspection]
 	dev-libs/gobject-introspection:=
-	app-text/pandoc
+	virtual/pandoc
 	$(python_gen_cond_dep '
 		dev-python/pygobject[${PYTHON_USEDEP}]
 		dev-python/pypandoc[${PYTHON_USEDEP}]
