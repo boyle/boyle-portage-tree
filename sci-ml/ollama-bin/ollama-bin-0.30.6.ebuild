@@ -21,6 +21,7 @@ IUSE="rocm cuda"
 RESTRICT="strip"
 
 RDEPEND="
+	!sci-ml/ollama
 	acct-group/ollama
 	acct-group/render
 	acct-group/video
@@ -52,4 +53,8 @@ src_install(){
 	newconfd "${FILESDIR}/ollama.confd" "ollama"
 
 	systemd_dounit "${FILESDIR}/ollama.service"
+
+	keepdir /var/log/ollama
+	fowners ollama:ollama /var/log/ollama
+	fperms 750 /var/log/ollama
 }
