@@ -23,6 +23,7 @@ src_install() {
 	BIN="/usr/bin/$PN"
 	echo -e "#! /bin/sh\nexec $BIN all backup --quiet" > "${S}"/backup.cron
 	echo -e "20 04 11 11 * $BIN all check --read-data --quiet # Nov 11 @ 4:20 (Rememberance Day)" > "${S}"/check.cron
+	echo -e "@reboot $BIN all unlock --quiet # clear locks at boot" > "${S}"/unlock.cron
 
 	dobin ${PN}
 	keepdir /etc/${PN}
@@ -34,4 +35,5 @@ src_install() {
 
 	exeinto /etc/cron.d
 	newexe check.cron ${PN}-check
+	newexe unlock.cron ${PN}-unlock
 }
